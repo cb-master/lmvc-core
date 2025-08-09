@@ -21,6 +21,7 @@ Class View
     public static function render($view, $data = [])
     {
         extract($data);
+        echo BASE_PATH . "/app/Views/{$view}.php";
         require BASE_PATH . "/app/Views/{$view}.php";
     }
 }
