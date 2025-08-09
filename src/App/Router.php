@@ -32,7 +32,7 @@ Class Router
         $this->routes['POST'][$this->normalize($uri)] = $callback;
     }
 
-    public function dispatch($uri)
+    public function dispatch()
     {
         $method = strtoupper($_SERVER['REQUEST_METHOD']);
         $path = $this->normalize('/' . Uri::path());
