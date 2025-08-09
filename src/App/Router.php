@@ -35,8 +35,7 @@ Class Router
     public function dispatch($uri)
     {
         $method = strtoupper($_SERVER['REQUEST_METHOD']);
-        $path = '/' . Uri::path();
-        // $path = $this->normalize(parse_url($uri, PHP_URL_PATH));
+        $path = $this->normalize('/' . Uri::path());
 
         if (isset($this->routes[$method][$path])) {
             $callback = $this->routes[$method][$path];
