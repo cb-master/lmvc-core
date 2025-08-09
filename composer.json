@@ -1,0 +1,23 @@
+{
+    "name": "cb-master/lmvc-core",
+    "description": "Laika PHP Framework Core Model",
+    "type": "project",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "CbMaster\\Lmvc\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "cb-master",
+            "email": "strblackhawk@gmail.com"
+        },
+        {
+            "name": "showket-ahmed",
+            "email": "riyadhtayf@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {}
+}
