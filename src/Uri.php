@@ -13,6 +13,9 @@ declare(strict_types=1);
 // Namespace
 namespace CBM\Core;
 
+// Deny Direct Access
+defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!');
+
 class Uri
 {
     // Instance
