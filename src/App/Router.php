@@ -35,8 +35,7 @@ Class Router
     public function dispatch($uri)
     {
         $method = strtoupper($_SERVER['REQUEST_METHOD']);
-        $path = '/' . Uri::path();
-        // $path = $this->normalize(parse_url($uri, PHP_URL_PATH));
+        $path = $this->normalize('/' . Uri::path());
 
         if (isset($this->routes[$method][$path])) {
             $callback = $this->routes[$method][$path];
@@ -45,8 +44,7 @@ Class Router
                 call_user_func($callback);
             } elseif (is_string($callback)) {
                 [$controller, $method] = explode('@', $callback);
-                $controller = "App\\Controllers\\{$controller}";
-                var_dump(class_exists($controller));
+                $controller = "CBM\\App\\Controllers\\{$controller}";
                 if (class_exists($controller)) {
                     call_user_func([new $controller, $method]);
                 }
