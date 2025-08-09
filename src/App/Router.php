@@ -16,6 +16,8 @@ namespace CBM\Core\App;
 // Deny direct access to this file
 defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
+use CBM\Core\Uri;
+
 Class Router
 {
     protected $routes = [];
@@ -33,7 +35,8 @@ Class Router
     public function dispatch($uri)
     {
         $method = strtoupper($_SERVER['REQUEST_METHOD']);
-        $path = $this->normalize(parse_url($uri, PHP_URL_PATH));
+        $path = '/' . Uri::path();
+        // $path = $this->normalize(parse_url($uri, PHP_URL_PATH));
 
         if (isset($this->routes[$method][$path])) {
             $callback = $this->routes[$method][$path];
@@ -42,7 +45,8 @@ Class Router
                 call_user_func($callback);
             } elseif (is_string($callback)) {
                 [$controller, $method] = explode('@', $callback);
-                $controller = "App\\Controllers\\$controller";
+                $controller = "App\\Controllers\\{$controller}";
+                var_dump(class_exists($controller));
                 if (class_exists($controller)) {
                     call_user_func([new $controller, $method]);
                 }
