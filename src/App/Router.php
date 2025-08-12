@@ -112,6 +112,7 @@ class Router
 
     private function addRoute(string $method, string $uri, callable|array|string $callback, array $middlewares = []): void
     {
+        $uri = '/'.trim($uri,'/');
         $fullUri = $this->group . $uri;
         $this->routes[$method][$this->normalize($fullUri)] = [
             'handler'     => $callback,
