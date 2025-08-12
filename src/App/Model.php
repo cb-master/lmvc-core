@@ -6,13 +6,13 @@
  */
 
 // Namespace
-namespace CBM\App\Model;
+namespace CBM\Core\App;
 
 use CBM\Model\Model as BaseModel;
 use CBM\Core\Config;
 
 // Forbidden Access
-defined('ROOTPATH') || http_response_code(403).die('403 Forbidden Access!');
+defined('BASE_PATH') || http_response_code(403).die('403 Forbidden Access!');
 
 class Model Extends BaseModel
 {
