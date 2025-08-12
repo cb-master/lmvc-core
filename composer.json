@@ -19,5 +19,8 @@
         }
     ],
     "minimum-stability": "dev",
-    "require": {}
+    "require": {
+        "cb-master/cbm-model": "dev-main",
+        "cb-master/php-session-handler": "dev-main"
+    }
 }
