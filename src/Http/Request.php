@@ -18,14 +18,41 @@ defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!')
 
 class Request
 {
+    /**
+     * @var array $get
+     */
     protected array $get;
+
+    /**
+     * @var array $post
+     */
     protected array $post;
+
+    /**
+     * @var array $files
+     */
     protected array $files;
+
+    /**
+     * @var array $server
+     */
     protected array $server;
+
+    /**
+     * @var array $json
+     */
     protected array $json;
+
+    /**
+     * @var string $rawBody
+     */
     protected string $rawBody;
+
+    /**
+     * @var string $method
+     */
     protected string $method;
-    protected object $instance;
+
 
     public function __construct()
     {

@@ -10,109 +10,138 @@
 
 declare(strict_types=1);
 
-// Namespace
 namespace CBM\Core\Http;
 
-// Deny Direct Access
 defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
 class Validator
 {
-    // Make Validator Result
     /**
-     * @param array $data Required Argument. Example $_REQUEST or Any Associative Array. Example: ['email'=>'test@example.com','age'=>32]
-     * @param array $rules Required Argument. Example: ['email'=>'required','age'=>'required|min:18|max:65']
-     * @param array $customMessages Optional Argument. Example: ['email.required'=>'Email is Required!']
-     * @return array
+     * Validate data according to given rules.
+     *
+     * @param array $data           Input data (e.g., $_REQUEST)
+     * @param array $rules          Validation rules (e.g., ['email' => 'required|email'])
+     * @param array $customMessages Custom error messages
+     * @return array                Validation errors
      */
     public static function make(array $data, array $rules, array $customMessages = []): array
     {
         $errors = [];
 
-        foreach($rules as $field => $ruleString){
+        foreach ($rules as $field => $ruleString) {
             $value = $data[$field] ?? null;
-            $ruleList = explode('|', $ruleString);
+            $ruleList = array_filter(explode('|', $ruleString), 'strlen');
 
-            foreach($ruleList as $rule){
+            foreach ($ruleList as $rule) {
                 $params = [];
 
                 if (str_contains($rule, ':')) {
                     [$rule, $paramString] = explode(':', $rule, 2);
-
-                    // Don't explode regex pattern!
                     $params = strtolower($rule) === 'regex'
                         ? [$paramString]
                         : explode(',', $paramString);
                 }
 
-                $messageKey = "{$field}.{$rule}";
+                $ruleName = strtolower(trim($rule));
+                $messageKey = "{$field}.{$ruleName}";
                 $customMessage = $customMessages[$messageKey] ?? null;
 
-                switch(strtolower($rule)){
+                // Skip non-required empty fields
+                if ($ruleName !== 'required' && ($value === null || $value === '')) {
+                    continue;
+                }
+
+                switch ($ruleName) {
                     case 'required':
-                        if($value === null || $value === ''){
+                        if ($value === null || $value === '') {
                             $errors[$field][] = $customMessage ?? "The {$field} field is required.";
                         }
                         break;
 
                     case 'email':
-                        if(!filter_var($value, FILTER_VALIDATE_EMAIL)){
+                        if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
                             $errors[$field][] = $customMessage ?? "The {$field} must be a valid email address.";
                         }
                         break;
 
                     case 'numeric':
-                        if($value !== null && !is_numeric($value)){
+                        if (!is_numeric($value)) {
                             $errors[$field][] = $customMessage ?? "The {$field} must be numeric.";
                         }
                         break;
 
                     case 'min':
                         $min = (int)($params[0] ?? 0);
-                        if(is_numeric($value) && $value < $min){
+                        if (is_numeric($value) && $value < $min) {
                             $errors[$field][] = $customMessage ?? "The {$field} must be at least {$min}.";
-                        }elseif(is_string($value) && mb_strlen($value) < $min){
+                        } elseif (is_string($value) && mb_strlen($value) < $min) {
                             $errors[$field][] = $customMessage ?? "The {$field} must be at least {$min} characters.";
                         }
                         break;
 
                     case 'max':
                         $max = (int)($params[0] ?? 0);
-                        if(is_numeric($value) && $value > $max){
+                        if (is_numeric($value) && $value > $max) {
                             $errors[$field][] = $customMessage ?? "The {$field} may not be greater than {$max}.";
-                        }elseif(is_string($value) && mb_strlen($value) > $max){
+                        } elseif (is_string($value) && mb_strlen($value) > $max) {
                             $errors[$field][] = $customMessage ?? "The {$field} may not be greater than {$max} characters.";
                         }
                         break;
 
                     case 'match':
                         $other = $params[0] ?? '';
-                        if(!isset($data[$other]) || $value !== $data[$other]){
+                        if (!isset($data[$other]) || $value !== $data[$other]) {
                             $errors[$field][] = $customMessage ?? "The {$field} must match {$other}.";
                         }
                         break;
 
                     case 'in':
-                        if(!in_array($value, array_map('strtolower', $params))){
+                        if (!in_array($value, $params, true)) {
                             $errors[$field][] = $customMessage ?? "The {$field} must be one of: " . implode(', ', $params);
                         }
                         break;
 
                     case 'regex':
                         $pattern = $params[0] ?? '';
-                        if($pattern && !preg_match($pattern, $value)){
-                            $errors[$field][] = $customMessage ?? "The {$field} format is invalid.";
+                        if ($pattern && @preg_match($pattern, '') !== false) {
+                            if (!preg_match($pattern, (string)$value)) {
+                                $errors[$field][] = $customMessage ?? "The {$field} format is invalid.";
+                            }
+                        } else {
+                            $errors[$field][] = "Invalid regex pattern for {$field}.";
+                        }
+                        break;
+                    
+                    case 'callback':
+                        $callbackName = $params[0] ?? null;
+                        if ($callbackName) {
+                            if (is_callable($callbackName)) {
+                                $result = call_user_func($callbackName, $value, $data, array_slice($params, 1));
+                            } elseif (strpos($callbackName, '::') !== false) {
+                                // Static method callback
+                                $result = call_user_func($callbackName, $value, $data, array_slice($params, 1));
+                            } elseif (function_exists($callbackName)) {
+                                // Global function
+                                $result = call_user_func($callbackName, $value, $data, array_slice($params, 1));
+                            } else {
+                                $result = "Invalid callback validation for {$field}.";
+                            }
+
+                            if ($result !== true) {
+                                $errors[$field][] = $customMessage ?? (is_string($result) ? $result : "The {$field} failed custom validation.");
+                            }
+                        } else {
+                            $errors[$field][] = "Invalid callback validation for {$field}.";
                         }
                         break;
 
                     default:
-                        $errors[$field][] = "Unknown validation rule '{$rule}' for field '{$field}'.";
+                        $errors[$field][] = "Unknown validation rule '{$ruleName}' for field '{$field}'.";
                         break;
                 }
             }
         }
 
-        // return new ValidatorResult($errors);
         return $errors;
     }
 }

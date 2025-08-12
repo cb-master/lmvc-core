@@ -24,8 +24,12 @@ class ErrorHandler
 {
     // Debug Mode
     protected static bool $debug = false;
+
     // Error Exceptions
     protected static array $exceptions = [];
+
+    // Has Output
+    protected static bool $hasOutput = false;
 
     // Register Error Handlers
     /**
@@ -66,41 +70,70 @@ class ErrorHandler
      */
     public static function handleException(Throwable $exception):void
     {
+        if (self::$hasOutput) {
+            // Already output error, just exit
+            exit;
+        }
+        self::$hasOutput = true;
+
         self::$exceptions[] = $exception;
         self::logError($exception);
+
+        if (self::$debug) {
+            self::errorHtml();
+        } else {
+            self::internalErrorHtml();
+        }
+
+        exit;
     }
 
     // Handle Shutdown
     public static function handleShutdown():void
     {
+        if (self::$hasOutput) {
+            // Already output error, just exit
+            exit;
+        }
+
         $error = error_get_last();
-        if($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])){
+        if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
             self::$exceptions[] = new ErrorException(
                 $error['message'], 0, $error['type'], $error['file'], $error['line']
             );
         }
 
-        if(self::$debug && !empty(self::$exceptions)){
-            self::errorHtml();
-        }elseif(!empty(self::$exceptions)){
-            self::internalErrorHtml();
+        if (!empty(self::$exceptions)) {
+            if (self::$debug) {
+                self::errorHtml();
+            } else {
+                self::internalErrorHtml();
+            }
+            exit;
         }
     }
 
-    protected static function logError($exception): void
+    // Log Errors in Log File
+    protected static function logError(Throwable $exception): void
     {
-        if(self::$debug){
-            $log = sprintf("[%s] %s: %s in %s on line %d\nTrace:\n%s\n\n",
-                date('Y-m-d H:i:s'),
-                get_class($exception),
-                $exception->getMessage(),
-                $exception->getFile(),
-                $exception->getLine(),
-                $exception->getTraceAsString()
-            );
-    
-            file_put_contents(BASE_PATH . '/error.log', $log, FILE_APPEND);
+        $logDir = BASE_PATH . '/logs';
+        if (!is_dir($logDir)) {
+            mkdir($logDir, 0775, true);
         }
+
+        $logFile = $logDir . '/error-' . date('Y-m-d') . '.log';
+
+        $log = sprintf(
+            "[%s] %s: %s in %s on line %d\nTrace:\n%s\n\n",
+            date('Y-m-d H:i:s'),
+            get_class($exception),
+            $exception->getMessage(),
+            $exception->getFile(),
+            $exception->getLine(),
+            $exception->getTraceAsString()
+        );
+
+        file_put_contents($logFile, $log, FILE_APPEND);
     }
 
     // Error Message HTML
@@ -181,7 +214,7 @@ class ErrorHandler
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <style>
                     *{margin:0;padding:0;box-sizing:border-box;}body{font-family: Arial, sans-serif; background: #f9f9f9; color: #333;width:100%;height:100%}
-                    h1{color: #d9534f; font-size: 1.8em;}
+                    h1{color:#af3733a3;font-size:3em;display:flex;width:100%;height:100dvh;place-items:center;justify-content: center;position: absolute;background: white;}
                 </style>
             </head>
             <body>

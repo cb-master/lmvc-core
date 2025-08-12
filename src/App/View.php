@@ -18,9 +18,19 @@ defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!')
 
 Class View
 {
-    public static function render($view, $data = [])
+    /**
+     * @param string $view View File Name. Example 'index' Where index Represents index.php in app/views directory
+     * @param array $data Data to Extract in View File
+     */
+    public static function render(string $view, array $data = [])
     {
-        extract($data);
+        $view = trim($view, '/');
+        $viewFile = BASE_PATH . "/app/Views/{$view}.php";
+
+        if (!file_exists($viewFile)) throw new \Exception("View file not found: {$viewFile}");
+
+        if ($data) extract($data, EXTR_SKIP);
+
         require BASE_PATH . "/app/Views/{$view}.php";
     }
 }
