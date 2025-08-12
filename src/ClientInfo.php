@@ -10,21 +10,17 @@
 
 declare(strict_types=1);
 
-// Namespace
 namespace CBM\Core;
 
-// Deny Direct Access
-defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!');
+defined('BASE_PATH') || http_response_code(403) . die('403 Direct Access Denied!');
 
 class ClientInfo
 {
-    // User Agent
     /**
      * @var string $userAgent
      */
     protected string $userAgent;
 
-    // Client IP
     /**
      * @var string $ip
      */
@@ -33,69 +29,72 @@ class ClientInfo
     public function __construct()
     {
         $this->userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
-        $this->ip = $this->getIp();
+        $this->ip        = $this->detectIp();
     }
 
-    // Get User Agent
+    /**
+     * @return string User Agent Name
+     */
     public function userAgent(): string
     {
         return $this->userAgent;
     }
 
-    // Get Client IP
+    /**
+     * @return string Client IP
+     */
     public function ip(): string
     {
         return $this->ip;
     }
 
-    // Get Client Language
+    /**
+     * @return string Client Language
+     */
     public function language(): string
     {
         $lang = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? 'en-US';
         return explode(',', $lang)[0];
     }
 
-    // Get Client OS Info
+    /**
+     * @return string Client Operating System Name
+     */
     public function os(): string
     {
         $ua = $this->userAgent;
 
-        if (preg_match('/Android\s+([0-9\.]+)/i', $ua, $m)) {
-            return 'Android ' . $m[1];
-        }
-
-        if (preg_match('/iPhone OS ([\d_]+)/i', $ua, $m)) {
-            return 'iOS ' . str_replace('_', '.', $m[1]);
-        }
-
-        if (preg_match('/iPad; CPU OS ([\d_]+)/i', $ua, $m)) {
-            return 'iPadOS ' . str_replace('_', '.', $m[1]);
-        }
-
-        if (preg_match('/Windows NT ([0-9\.]+)/i', $ua, $m)) {
-            $map = [
+        $osPatterns = [
+            '/Android\s+([0-9\.]+)/i'       => 'Android %s',
+            '/iPhone OS ([\d_]+)/i'         => 'iOS %s',
+            '/iPad; CPU OS ([\d_]+)/i'      => 'iPadOS %s',
+            '/Windows NT ([0-9\.]+)/i'      => [
                 '10.0' => 'Windows 10',
                 '6.3'  => 'Windows 8.1',
                 '6.2'  => 'Windows 8',
                 '6.1'  => 'Windows 7',
                 '6.0'  => 'Windows Vista',
                 '5.1'  => 'Windows XP',
-            ];
-            return $map[$m[1]] ?? 'Windows NT ' . $m[1];
-        }
+            ],
+            '/Mac OS X ([\d_]+)/i'          => 'Mac OS X %s',
+            '/Linux/i'                      => 'Linux'
+        ];
 
-        if (preg_match('/Mac OS X ([\d_]+)/i', $ua, $m)) {
-            return 'Mac OS X ' . str_replace('_', '.', $m[1]);
-        }
-
-        if (preg_match('/Linux/i', $ua)) {
-            return 'Linux';
+        foreach ($osPatterns as $pattern => $result) {
+            if (preg_match($pattern, $ua, $m)) {
+                if (is_array($result)) {
+                    return $result[$m[1]] ?? "Windows NT {$m[1]}";
+                }
+                return sprintf($result, str_replace('_', '.', $m[1] ?? ''));
+            }
         }
 
         return 'Unknown OS';
     }
 
-    // Get Client Browser Info
+    /**
+     * @return string Client Browser Name
+     */
     public function browser(): string
     {
         $ua = $this->userAgent;
@@ -118,41 +117,63 @@ class ClientInfo
             ['name' => 'DuckDuckGo',        'pattern' => '/DuckDuckGo\/([0-9\.]+)/'],
         ];
 
-        foreach($browsers as $browser){
-            if(preg_match($browser['pattern'], $ua, $match)){
+        foreach ($browsers as $browser) {
+            if (preg_match($browser['pattern'], $ua, $match)) {
                 return $browser['name'] . ' ' . $match[1];
             }
-        }
-
-        // Fallback to generic UA info
-        if(preg_match('/[a-z]+\/([0-9\.]+)/i', $ua, $match)){
-            return 'Unknown Browser ' . $match[1];
         }
 
         return 'Unknown Browser';
     }
 
-    // Get Client Device Type
+    /**
+     * @return string Client Device Type
+     */
     public function deviceType(): string
     {
         $ua = strtolower($this->userAgent);
 
-        if(strpos($ua, 'mobile') !== false || preg_match('/iphone|ipod|android/i', $ua)){
-            return 'Mobile';
+        if ($this->isBot()) {
+            return 'Bot';
         }
 
-        if(preg_match('/ipad|tablet/i', $ua)){
+        if (preg_match('/ipad|tablet/i', $ua)) {
             return 'Tablet';
         }
 
-        if(preg_match('/bot|crawl|slurp|spider/i', $ua)){
-            return 'Bot';
+        if (strpos($ua, 'mobile') !== false || preg_match('/iphone|ipod|android/i', $ua)) {
+            return 'Mobile';
         }
 
         return 'Desktop';
     }
 
-    // Get Client All Info
+    /**
+     * @return bool Check Client is Bot
+     */
+    public function isBot(): bool
+    {
+        $ua = strtolower($this->userAgent);
+
+        $bots = [
+            'googlebot', 'bingbot', 'slurp', 'duckduckbot', 'baiduspider', 'yandexbot',
+            'sogou', 'exabot', 'facebot', 'ia_archiver', 'mj12bot', 'semrushbot',
+            'ahrefsbot', 'dotbot', 'uptimebot', 'twitterbot', 'petalbot',
+            'crawler', 'spider', 'bot'
+        ];
+
+        foreach ($bots as $bot) {
+            if (strpos($ua, $bot) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array Client All Info
+     */
     public function all(): array
     {
         return [
@@ -162,21 +183,31 @@ class ClientInfo
             'device'    => $this->deviceType(),
             'language'  => $this->language(),
             'userAgent' => $this->userAgent(),
+            'isBot'     => $this->isBot()
         ];
     }
 
-    protected function getIp(): string
+    /**
+     * @return string Detect Client IP
+     */
+    protected function detectIp(): string
     {
-        foreach([
+        foreach ([
             'HTTP_CLIENT_IP',
             'HTTP_X_FORWARDED_FOR',
             'HTTP_X_FORWARDED',
             'HTTP_FORWARDED_FOR',
             'HTTP_FORWARDED',
             'REMOTE_ADDR'
-        ] as $key){
-            if(!empty($_SERVER[$key])){
-                return explode(',', $_SERVER[$key])[0];
+        ] as $key) {
+            if (!empty($_SERVER[$key])) {
+                $ipList = explode(',', $_SERVER[$key]);
+                foreach ($ipList as $ip) {
+                    $ip = trim($ip);
+                    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_RES_RANGE)) {
+                        return $ip;
+                    }
+                }
             }
         }
 

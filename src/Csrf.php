@@ -15,7 +15,7 @@ namespace CBM\Core;
 // Deny Direct Access
 defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
-use CBM\Core\Request\Request;
+use CBM\Core\Http\Request;
 use CBM\Session\Session;
 
 class Csrf
@@ -26,13 +26,14 @@ class Csrf
     public function __construct(?string $key = null)
     {
         $this->key = $key ?: 'csrf';
-        $this->generateCsrfToken();
+        $this->generate();
     }
 
     // Create CSRF Token
-    private function generateCsrfToken(): void
+    private function generate(): void
     {
-        if((time() - (int) (Session::get('csrf_refresh_time')) > (int)Config::get('app','refresh_time'))){
+        $refresh_time = (int) (Config::get('app','refresh_time') ?: 300);
+        if((time() - (int) (Session::get('csrf_refresh_time')) > $refresh_time)){
             Session::set('csrf_refresh_time', time());
             Session::pop($this->key);
         }
@@ -43,13 +44,13 @@ class Csrf
     }
 
     // Get Form Token
-    public function getCsrfToken(): string
+    public function get(): string
     {
-        return Session::get($this->key);
+        return (string) Session::get($this->key);
     }
 
     // Reset Form Token
-    public function resetCsrfToken(): void
+    public function reset(): void
     {
         Session::set($this->key, bin2hex(random_bytes(64)));
     }
@@ -58,11 +59,9 @@ class Csrf
     public function validate(): bool
     {
         $request = new Request();
-        $existing_token = self::getCsrfToken();
-        self::resetCsrfToken();
-        if($request->input($this->key) != $existing_token){
-            return false;
-        }
-        return true;
+        $existing_token = $this->get();
+        $this->reset();
+        $requestToken = (string) $request->input($this->key);
+        return hash_equals($requestToken, $existing_token);
     }
 }

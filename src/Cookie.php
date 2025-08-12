@@ -5,56 +5,82 @@
  * Email: riyadhtayf@gmail.com
  * License: MIT
  * This file is part of the Laika PHP MVC Framework.
- * For the full copyright and license information, please view the LICENSE file that was distributed with this source code.
  */
 
 declare(strict_types=1);
 
- // Namespace
 namespace CBM\Core;
 
-// Deny Direct Access
-defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!');
+defined('BASE_PATH') || http_response_code(403) . die('403 Direct Access Denied!');
 
-// Cookie Hndler
 class Cookie
 {
-    // Set Cookie
     /**
-    * @param ?string $key Required Cookie Name Key
-    * @param ?string $value Required Cookie value
-    * @param int $expires Default is time() + 7 Days
-    * @param ?string $path Optional Argument. Default is '/'.
-    */
-    public static function set(string $name, string $value, int $expires = 604800, string $path = '/'):bool
+     * Set a cookie (supports string, array, or object)
+     *
+     * @param string $name    Cookie name
+     * @param mixed  $value   String, array, or object to store
+     * @param int    $expires Lifetime in seconds (default 7 days)
+     * @param string $path    Cookie path (default '/')
+     */
+    public static function set(string $name, mixed $value, int $expires = 604800, string $path = '/'): bool
     {
-        return setcookie($name, $value, [
-            'expires' => time() + $expires,
-            'path' => $path,
-            'domain' => Uri::host(),
-            'secure' => Uri::isHttps(),
+        if (is_array($value) || is_object($value)) {
+            $value = json_encode($value, JSON_THROW_ON_ERROR);
+        } else {
+            $value = (string)$value;
+        }
+        return setcookie($name, rawurlencode($value), [
+            'expires'  => time() + $expires,
+            'path'     => $path,
+            'domain'   => Uri::host(),
+            'secure'   => Uri::isHttps(),
             'httponly' => true,
             'samesite' => 'Strict'
         ]);
     }
 
-    // Get Cookie
     /**
-    * @param ?string $key - Required Cookie Name
-    */
-    public static function get(string $name):string
+     * Get a cookie value (will decode JSON if possible)
+     *
+     * @param string $name Cookie name
+     * @return mixed Returns string or decoded array/object if JSON
+     */
+    public static function get(string $name): mixed
     {
-        return $_COOKIE[$name] ?? '';
+        if (!isset($_COOKIE[$name])) {
+            return null;
+        }
+
+        $value = rawurldecode($_COOKIE[$name]);
+
+        // Try to decode JSON; if fails, return raw string
+        try {
+            $decoded = json_decode($value, true, 512, JSON_THROW_ON_ERROR);
+            return $decoded;
+        } catch (\JsonException $e) {
+            return $value;
+        }
     }
 
-    // Destroy Cookie
     /**
-    * @param string $key - Required Cookie Name
-    */
-    public static function pop(string $name):bool
+     * Remove a cookie
+     *
+     * @param string $name Cookie name
+     * @param string $path Cookie path. Default is '/'
+     */
+    public static function pop(string $name, string $path = '/'): bool
     {
-        if(isset($_COOKIE[$name])){
-            self::set($name, '', -1);
+        if (isset($_COOKIE[$name])) {
+            setcookie($name, '', [
+                'expires'  => time() - 3600,
+                'path'     => $path,
+                'domain'   => Uri::host(),
+                'secure'   => Uri::isHttps(),
+                'httponly' => true,
+                'samesite' => 'Strict'
+            ]);
+            unset($_COOKIE[$name]);
         }
         return true;
     }

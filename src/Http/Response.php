@@ -10,87 +10,88 @@
 
 declare(strict_types=1);
 
-// Namespace
 namespace CBM\Core\Http;
 
-// Deny Direct Access
 defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
 use CBM\Core\Config;
 
 class Response
 {
-    // Headers
     /**
      * Default Headers
      */
     private static array $headers = [
-        "Access-Control-Allow-Origin"       =>  "*",
-        "Access-Control-Allow-Methods"      =>  "GET, POST",
-        "Access-Control-Allow-Headers"      =>  "Authorization, Origin, X-Requested-With, Content-Type, Accept",
-        "Access-Control-Allow-Credentials"  =>  "true",
-        "X-Powered-By"                      =>  "Laika",
-        "X-Frame-Options"                   =>  "sameorigin",
-        "Content-Security-Policy"           =>  "frame-ancestors 'self'",
+        "Access-Control-Allow-Origin"       => "*",
+        "Access-Control-Allow-Methods"      => "GET, POST",
+        "Access-Control-Allow-Headers"      => "Authorization, Origin, X-Requested-With, Content-Type, Accept",
+        "Access-Control-Allow-Credentials"  => "true",
+        "X-Powered-By"                       => "Laika",
+        "X-Frame-Options"                    => "sameorigin",
+        "Content-Security-Policy"            => "frame-ancestors 'self'",
     ];
 
-    // Set Response Code
     /**
-     * @param int $code - Default is 200
+     * Set HTTP response code
      */
-    public static function code(int $code = 200):int
+    public static function code(int $code = 200): int
     {
         http_response_code($code);
         return $code;
     }
 
-    // Powered By Response
     /**
-     * @param string $str - Required Argument
+     * Set custom "X-Powered-By" header
      */
-    public static function poweredBy(string $str)
+    public static function poweredBy(string $str): void
     {
-        header("X-Powered-By:{$str}");
+        header("X-Powered-By: {$str}", true);
     }
 
-    // Set Header
     /**
-     * @param array $headers - Custom Headers to Add New or Replace Header
+     * Set or overwrite headers
      */
-    public static function setHeader(array $headers = []):void
+    public static function setHeader(array $headers = []): void
     {
-        foreach($headers as $key => $value){
-            $key = trim($key);
-            $value = trim($value);
-            header("{$key}: {$value}");
+        foreach ($headers as $key => $value) {
+            header(trim($key) . ": " . trim((string) $value), true);
         }
     }
 
-    // Response Header Set
-    public static function defaultHeader()
+    /**
+     * Send default headers + framework-specific ones
+     */
+    public static function defaultHeader(): void
     {
-        $headers["Request-Time"] = time();
-        $headers['App-Provider'] = Config::get('app', 'provider');
-        $headers = array_merge(self::$headers, $headers);
-        foreach($headers as $key => $value){
-            $key = trim($key);
-            $value = trim((string) $value);
-            header("{$key}: {$value}");
+        $customHeaders = [
+            "Request-Time" => time(),
+            "App-Provider" => Config::get('app', 'provider'),
+        ];
+
+        $headers = array_merge(self::$headers, $customHeaders);
+
+        foreach ($headers as $key => $value) {
+            header(trim($key) . ": " . trim((string) $value), true);
         }
     }
 
-    // Get Response Header Value
     /**
-     * @param $key - Optional Argument. Default is null. Return will be array on null or string.
+     * Get sent response headers
+     * @param string|null $key  Header key to fetch (case-insensitive)
+     * @return array|string
      */
-    public static function get(?string $key = null):array|string
+    public static function get(?string $key = null): array|string
     {
         $val = [];
-        $header_list = headers_list();
-        foreach($header_list as $header){
-            $arr = explode(':', $header);
-            $val[strtolower(trim($arr[0]))] = trim($arr[1] ?? '');
+        foreach (headers_list() as $header) {
+            $parts = explode(':', $header, 2);
+            $val[strtolower(trim($parts[0]))] = trim($parts[1] ?? '');
         }
-        return $key ? ($val[$key] ?? '') : $val;
+
+        if ($key !== null) {
+            return $val[strtolower($key)] ?? '';
+        }
+
+        return $val;
     }
 }
