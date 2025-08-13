@@ -21,6 +21,7 @@
     "minimum-stability": "dev",
     "require": {
         "cb-master/cbm-model": "dev-main",
-        "cb-master/php-session-handler": "dev-main"
+        "cb-master/php-session-handler": "dev-main",
+        "firebase/php-jwt": "dev-main"
     }
 }
