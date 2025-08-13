@@ -61,7 +61,7 @@ class Response
     /**
      * Send default headers + framework-specific ones
      */
-    public static function defaultHeader(): void
+    public static function register(): void
     {
         $customHeaders = [
             "Request-Time" => time(),

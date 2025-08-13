@@ -20,53 +20,87 @@ use ReflectionMethod;
 
 class Router
 {
+    protected static object $instance;
     protected array $routes = [];
     protected string $group = '';
     protected array $middlewares = [];
     protected array $globalMiddlewares = [];
 
+    private function __construct(){}
+
+    // Load Instance
+    protected static function instance(): static
+    {
+        self::$instance ??= new Static;
+        return self::$instance;
+    }
+
     public function group(string $prefix, callable $callback, array $middlewares = []): void
     {
-        $previousGroup = $this->group;
-        $previousMiddlewares = $this->middlewares;
+        $previousGroup = self::instance()->group;
+        $previousMiddlewares = self::instance()->middlewares;
 
-        $this->group = $previousGroup . $prefix;
-        $this->middlewares = array_merge($this->middlewares, $middlewares);
+        self::instance()->group = $previousGroup . $prefix;
+        self::instance()->middlewares = array_merge(self::instance()->middlewares, $middlewares);
 
-        $callback($this);
+        $callback(self::instance());
 
-        $this->group = $previousGroup;
-        $this->middlewares = $previousMiddlewares;
+        self::instance()->group = $previousGroup;
+        self::instance()->middlewares = $previousMiddlewares;
     }
 
-    public function middleware(string|callable $middleware): self
+    public function middleware(array|string|callable $middlewares): self
     {
-        $this->middlewares[] = $middleware;
-        return $this;
+        // self::instance()->middlewares[] = $middleware;
+        // return self::instance();
+        // Wrap single item into an array
+        if (!is_array($middlewares)) {
+            $middlewares = [$middlewares];
+        }
+
+        // Target the last registered route
+        $lastMethod = array_key_last(self::instance()->routes);
+        if ($lastMethod !== null) {
+            $lastRoute = array_key_last(self::instance()->routes[$lastMethod]);
+            if ($lastRoute !== null) {
+                // Append to this specific route's middlewares
+                self::instance()->routes[$lastMethod][$lastRoute]['middlewares'] = array_merge(
+                    self::instance()->routes[$lastMethod][$lastRoute]['middlewares'] ?? [],
+                    $middlewares
+                );
+                return self::instance();
+            }
+        }
+
+        // Fallback: treat as global middleware
+        self::instance()->middlewares = array_merge(self::instance()->middlewares, $middlewares);
+        return self::instance();
     }
 
-    public function get(string $uri, callable|array|string $callback, array $middlewares = []): void
+    public static function get(string $uri, callable|array|string $callback, array $middlewares = []): static
     {
-        $this->addRoute('GET', $uri, $callback, $middlewares);
+        self::instance()->addRoute('GET', $uri, $callback, $middlewares);
+        return self::instance();
     }
 
-    public function post(string $uri, callable|array|string $callback, array $middlewares = []): void
+    public static function post(string $uri, callable|array|string $callback, array $middlewares = []): static
     {
-        $this->addRoute('POST', $uri, $callback, $middlewares);
+        self::instance()->addRoute('POST', $uri, $callback, $middlewares);
+        return self::instance();
     }
 
-    public function addGlobalMiddleware(string|callable $middleware): void
+    public static function addGlobalMiddleware(string|callable $middleware): void
     {
-        $this->globalMiddlewares[] = $middleware;
+        self::instance()->globalMiddlewares[] = $middleware;
     }
 
-    public function dispatch(): void
+    public static function dispatch(): void
     {
         $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
-        $path   = $this->normalize('/' . Uri::path());
+        $path   = self::instance()->normalize('/' . Uri::path());
         $request = new Request();
 
-        foreach ($this->routes[$method] ?? [] as $route => $data) {
+        foreach (self::instance()->routes[$method] ?? [] as $route => $data) {
             $pattern = preg_replace('/\{[a-zA-Z_][a-zA-Z0-9_]*\}/', '([a-zA-Z0-9-_]+)', $route);
             $pattern = "#^{$pattern}$#";
 
@@ -74,8 +108,8 @@ class Router
                 array_shift($matches);
 
                 // Run global + route middlewares
-                foreach (array_merge($this->globalMiddlewares, $data['middlewares']) as $middleware) {
-                    if (!$this->runMiddleware($middleware, $request)) {
+                foreach (array_merge(self::instance()->globalMiddlewares, $data['middlewares']) as $middleware) {
+                    if (!self::instance()->runMiddleware($middleware, $request)) {
                         return; // Stop if middleware blocks request
                     }
                 }
@@ -86,7 +120,7 @@ class Router
                 if (is_string($callback)) {
                     [$controller, $methodName] = explode('@', $callback);
                     $controller = "CBM\\App\\Controller\\{$controller}";
-                    $this->invokeController($controller, $methodName, $matches, $request);
+                    self::instance()->invokeController($controller, $methodName, $matches, $request);
                     return;
                 }
 
@@ -94,7 +128,7 @@ class Router
                 if (is_array($callback)) {
                     [$controller, $methodName] = $callback;
                     $controller = "CBM\\App\\Controller\\{$controller}";
-                    $this->invokeController($controller, $methodName, $matches, $request);
+                    self::instance()->invokeController($controller, $methodName, $matches, $request);
                     return;
                 }
 
@@ -113,10 +147,10 @@ class Router
     private function addRoute(string $method, string $uri, callable|array|string $callback, array $middlewares = []): void
     {
         $uri = '/'.trim($uri,'/');
-        $fullUri = $this->group . $uri;
-        $this->routes[$method][$this->normalize($fullUri)] = [
+        $fullUri = self::instance()->group . $uri;
+        self::instance()->routes[$method][self::instance()->normalize($fullUri)] = [
             'handler'     => $callback,
-            'middlewares' => array_merge($this->middlewares, $middlewares),
+            'middlewares' => array_merge(self::instance()->middlewares, $middlewares),
         ];
     }
 
