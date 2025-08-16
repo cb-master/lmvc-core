@@ -6,7 +6,11 @@
     "autoload": {
         "psr-4": {
             "CBM\\Core\\": "src/"
-        }
+        },
+        "files":[
+            "helpers/functions.php",
+            "helpers/filters.php"
+        ]
     },
     "authors": [
         {

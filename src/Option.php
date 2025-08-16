@@ -29,9 +29,6 @@ class Option
     // Option Value Column
     private static string $value = 'opt_value';
 
-    // Option Default Column
-    private static string $default = 'opt_default';
-
     // Get Option Value
     /**
      * @param string $name - Required Argument as Option Key.
@@ -43,9 +40,8 @@ class Option
             $db = DB::getInstance();
             $option = $db->table(self::$table)->where(self::$key, '=', $name)->first(self::$value);
             return $option[self::$value] ?? '';
-        }catch(\Throwable $th){
-            return '';
-        }
+        }catch(\Throwable $th){}
+        return '';
     }
 
     // Set Option
@@ -54,14 +50,17 @@ class Option
      * @param string $value Required Argument. Option Value
      * @param bool $default Optional Argument. Default is false
      */
-    public static function set(string $name, string $value, bool $default = false): int
+    public static function set(string $name, string $value, bool $default = false): bool
     {
         $db = DB::getInstance();
         $opt_default = $default ? 'yes' : 'no';
+
         $exist = $db->table(self::$table)->where(self::$key, '=', $name)->first();
+
         if(empty($exist)){
-            return $db->table(self::$table)->insert([self::$key => $name, self::$value => $value, self::$default=>$opt_default]);
+            return (bool) $db->table(self::$table)->insert([self::$key => $name, self::$value => $value, 'opt_default'=>$opt_default]);
         }
-        return $db->table(self::$table)->where(self::$key, '=', $name)->update([self::$value=>$value]);
+
+        return (bool) $db->table(self::$table)->where(self::$key, '=', $name)->update([self::$value=>$value]);
     }
 }
