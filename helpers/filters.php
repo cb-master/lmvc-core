@@ -11,7 +11,7 @@
 declare(strict_types=1);
 
 // Load View
-add_filter('load_view', function(string $view){ echo $view; die; return trim($view); });
+add_filter('load_view', function(string $view){ return trim($view); });
 
 // Load Style
 add_filter('load_style', function(string $style){ return trim($style); });
