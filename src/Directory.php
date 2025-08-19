@@ -44,9 +44,8 @@ class Directory
 
     public static function make(string $path, int $permissions = 0755, bool $recursive = true): bool
     {
-        if (self::exists($path)) {
-            return true;
-        }
+        if (self::exists($path)) return true;
+        
         return mkdir($path, $permissions, $recursive);
     }
 

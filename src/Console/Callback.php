@@ -26,18 +26,19 @@ class Callback
         $this->args = $args;
     }
 
-    public function register()
+    public function register(): void
     {
         if(isset($this->args[0]) && $this->args[0]){
             $params = explode(':', $this->args[0]);
             $service = $params[0];
             $action = $params[1] ?? null;
             array_shift($this->args);
-            echo $this->action($service, $action);
+            $result = $this->action($service, $action);
+            print_r($result['message'] ?? $result);
         }
         // Show Message if Blank Input Given
         else{
-            echo Message::default();
+            echo Message::show("Error", "Invalid Input: '" . implode(' ', $this->args) . "'. Please run 'php laika -h' for help", 'red');
         }
     }
 
@@ -45,20 +46,16 @@ class Callback
      * @param string $service Service to call. Example middleware,model etc.
      * @param ?string $action Action to call. Example create,modify etc.
      */
-    private function action(string $service, ?string $action): string
+    private function action(string $service, ?string $action): string|array
     {
-        $service = strtolower($service);
         $action = $action ? strtolower($action) : 'handle';
 
         $class = __NAMESPACE__.'\\Service\\'.ucfirst($service);
 
-        if(class_exists($class)){
-            if(method_exists($class, $action)){
-                return call_user_func([new $class, $action], $this->args);
-            }else{
-                return Message::invalidParameter("{$service}:{$action}");
-            }
+        if(!class_exists($class) || !method_exists($class, $action)){
+            return Message::show("Error", "Invalid Parameter. Please run 'php laika -h' for help", "red");
         }
-        return Message::invalidParameter($service);
+        
+        return call_user_func([new $class($this->args), $action]);
     }
 }
