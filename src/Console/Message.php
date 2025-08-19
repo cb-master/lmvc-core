@@ -15,55 +15,60 @@ namespace CBM\Core\Console;
 
 class Message
 {
-    /**
-     * @return string
-     */
-    public static function default(): string
+    // Show Error Message With Color
+    public static function show(string $type, string $message, string $color = 'green'): string
     {
-        return "Please Run: 'php laika --h' or 'php laika --help' for help\n";
-    }
+        // Get Exact Values
+        $type = strtoupper($type);
+        $color = strtolower($color);
+        // Enable ANSI If OS Is Windows Terminal
+        if((PHP_OS_FAMILY == 'Windows') && sapi_windows_vt100_support(STDOUT, true)){
+            switch($color)
+            {
+                case 'green':
+                    $str = "\n\033[1;32m[{$type}]\033[0m - {$message}\n\n";
+                    break;
 
-    /**
-     * @return string
-     */
-    public static function error(): string
-    {
-        return "Something Went Wrong\n";
-    }
+                case 'red':
+                    $str = "\n\033[1;31m[{$type}]\033[0m - {$message}\n\n";
+                    break;
 
-    /**
-     * @param string $str Service Name. Example: middleware, model, view
-     * @return string
-     */
-    public static function invalidParameter(string $str): string
-    {
-        return "Invalid Parameter Given: {$str}\n";
-    }
+                case 'yellow':
+                    $str = "\n\033[1;33m[{$type}]\033[0m - {$message}\n\n";
+                    break;
 
-    /**
-     * @param string $str Service Name. Example: middleware, model, view
-     * @return string
-     */
-    public static function invalidService(string $str): string
-    {
-        return "{$str} Service Name Not Defined or Invalid\n";
-    }
+                case 'blue':
+                    $str = "\n\033[1;34m[{$type}]\033[0m - {$message}\n\n";
+                    break;
 
-    /**
-     * @param string $str Service Name. Example: SampleMiddleware, SampleModel etc.
-     * @return string
-     */
-    public static function exist(string $str): string
-    {
-        return "{$str} Already Exist!\n";
-    }
+                default:
+                    $str = "\n\033[1;0m[{$type}] - {$message}\n\n";
+                    break;
+            }
+        }else{
+            switch($color)
+            {
+                case 'green':
+                    $str = "\n\033[1;32m[{$type}]\033[0m - {$message}\n\n";
+                    break;
 
-    // Created Message
-    /**
-     * @return string
-     */
-    public static function created(string $str): string
-    {
-        return "{$str} Created Successfully!\n";
+                case 'red':
+                    $str = "\n\033[1;31m[{$type}]\033[0m - {$message}\n\n";
+                    break;
+
+                case 'yellow':
+                    $str = "\n\033[1;33m[{$type}]\033[0m - {$message}\n\n";
+                    break;
+
+                case 'blue':
+                    $str = "\n\033[1;34m[{$type}]\033[0m - {$message}\n\n";
+                    break;
+
+                default:
+                    $str = "\n\033[1;0m[{$type}] - {$message}\n\n";
+                    break;
+            }
+        }
+        return $str;
     }
 }
