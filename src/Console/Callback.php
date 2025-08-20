@@ -29,11 +29,28 @@ class Callback
     public function register(): void
     {
         if(isset($this->args[0]) && $this->args[0]){
-            $params = explode(':', $this->args[0]);
+
+            // Set Service
+            $params = str_contains($this->args[0], ':') ? explode(':', $this->args[0]) : [$this->args[0]];
             $service = $params[0];
-            $action = (isset($params[1]) && $params[1]) ? $params[1] : null;
+
+            // Remove Service Name from Args
             array_shift($this->args);
+
+            // Set Action
+            if(isset($params[1]) && $params[1]){
+                $action = $params[1];
+            }elseif(isset($this->args[0]) && $this->args[0]){
+                $action = $this->args[0];
+                // Remove Action Name from Args
+                array_shift($this->args);
+            }else{
+                $action = null;
+            }
+
             $result = $this->action($service, $action);
+
+            // Show Message
             print_r($result['message'] ?? $result);
         }
         // Show Message if Blank Input Given
@@ -50,7 +67,7 @@ class Callback
     private function action(string $service, ?string $action): string|array
     {
         $action = $action ? strtolower($action) : 'handle';
-
+        
         $class = __NAMESPACE__.'\\Service\\'.ucfirst($service);
 
         if(!class_exists($class) || !method_exists($class, $action)){
