@@ -38,12 +38,11 @@ class View
         // Check View Name is Alphabetic or Not Blank or No Special Character
         $name = $this->args[0] ?? '';
         $name = trim($name, '/');
-        if(!preg_match('/^[a-zA-Z\/_-]+$/', $name)){
-            return [
+        
+        if(!preg_match('/^[a-zA-Z\/_-]+$/', $name)) return [
                 'status'    =>  false,
                 'message'   =>  Message::show("Error", "Invalid Name: '{$name}'", "red")
             ];
-        }
 
         // Get File Path
         $file_path = "{$this->dir}/{$name}.tpl.php";
@@ -51,22 +50,20 @@ class View
         Directory::make(dirname($file_path));
 
         // Check File Already Exist
-        if(is_file($file_path)){
-            return [
+        if(is_file($file_path)) return [
                 'status'    =>  false,
                 'message'   =>  Message::show("Error", "View: '{$name}' Already Exist", "red")
             ];
-        }
 
         // Make File
         $content = file_get_contents(__DIR__.'/../Samples/View.sample');
 
-        if(file_put_contents($file_path, $content) === false){
-            return [
+        if(file_put_contents($file_path, $content) === false) return [
                 'status'    =>  false,
                 'message'   =>  Message::show("Error", "Something Went Wrong! Unable to Create '{$file_path}'", 'red')
             ];
-        }
+
+        // Return Success Message
         return [
             'status'    =>  true,
             'message'   =>  Message::show("Success", "View: '{$name}' Created Successfully")
@@ -79,12 +76,10 @@ class View
         // Check View Name is Alphabetic or Not Blank or No Special Character
         $name = $this->args[0] ?? '';
         $name = trim($name, '/');
-        if(!preg_match('/^[a-zA-Z-\/_-]+$/', $name)){
-            return [
+        if(!preg_match('/^[a-zA-Z\/_-]+$/', $name)) return [
                 'status'    =>  false,
                 'message'   =>  Message::show("Error", "Invalid Name: '{$name}'", "red")
             ];
-        }
 
         // Get File Path
         $file_path = "{$this->dir}/{$name}.tpl.php";
@@ -92,22 +87,20 @@ class View
         Directory::make(dirname($file_path));
 
         // Check File Already Exist
-        if(is_file($file_path)){
-            return [
+        if(is_file($file_path)) return [
                 'status'    =>  false,
                 'message'   =>  Message::show("Error", "View: '{$name}' Already Exist", "red")
             ];
-        }
 
         // Make File
         $content = file_get_contents(__DIR__.'/../Samples/TemplateView.sample');
 
-        if(file_put_contents($file_path, $content) === false){
-            return [
+        if(file_put_contents($file_path, $content) === false) return [
                 'status'    =>  false,
                 'message'   =>  Message::show("Error", "Something Went Wrong! Unable to Create '{$file_path}'", 'red')
             ];
-        }
+
+        // Return Success Message
         return [
             'status'    =>  true,
             'message'   =>  Message::show("Success", "View: '{$name}' Created Successfully")
@@ -124,47 +117,38 @@ class View
         $new_name = $this->args[1] ?? '';
         $new_name = trim($new_name, '/');
 
-        if(!preg_match('/^[a-zA-Z\/_-]+$/', $old_name)){
-            return [
+        if(!preg_match('/^[a-zA-Z\/_-]+$/', $old_name)) return [
                 'status'    =>  false,
                 'message'   =>  Message::show("Error", "Invalid Old View Name: '{$old_name}'", "red")
             ];
-        }
 
-        if(!preg_match('/^[a-zA-Z\/_-]+$/', $new_name)){
-            return [
+        if(!preg_match('/^[a-zA-Z\/_-]+$/', $new_name)) return [
                 'status'    =>  false,
                 'message'   =>  Message::show("Error", "Invalid New View Name: '{$new_name}'", "red")
             ];
-        }
 
         // Get File Path
         $old_file_path = "{$this->dir}/{$old_name}.tpl.php";
         $new_file_path = "{$this->dir}/{$new_name}.tpl.php";
 
         // Check Old File Exist
-        if(!is_file($old_file_path)){
-            return [
+        if(!is_file($old_file_path)) return [
                 'status'    =>  false,
                 'message'   =>  Message::show("Error", "Old View: '{$old_name}' Doesn't Exist", "red")
             ];
-        }
 
         // Check New File Does Not Exist
-        if(is_file($new_file_path)){
-            return [
+        if(is_file($new_file_path)) return [
                 'status'    =>  false,
                 'message'   =>  Message::show("Error", "New View: '{$new_name}' Already Exist", "red")
             ];
-        }
 
-        if(rename($old_file_path, $new_file_path)){
-            return [
+        if(rename($old_file_path, $new_file_path)) return [
                 'status'    =>  true,
-                'message'   =>  Message::show("Success", "View Renamed: From '{$old_name}' to '{$new_name}' Successfully.")
+                'message'   =>  Message::show("Success", "View Renamed: From '{$old_name}' to '{$new_name}' Successfully")
             ];
-        }
-        
+
+        // If Rename Failed
         return [
             'status'    =>  false,
             'message'   =>  Message::show("Error", "Something Went Wrong! Unable to Rename View", 'red')
@@ -178,12 +162,10 @@ class View
         $name = $this->args[0] ?? '';
         $name = trim($name, '/');
 
-        if(!preg_match('/^[a-zA-Z\/_-]+$/', $name)){
-            return [
+        if(!preg_match('/^[a-zA-Z\/_-]+$/', $name)) return [
                 'status'    =>  false,
-                'message'   =>  Message::show("Error", "View Name: '{$name}' is Invalid!", "red")
+                'message'   =>  Message::show("Error", "View Name: '{$name}' is Invalid", "red")
             ];
-        }
 
         // Get File Path
         $file_path = "{$this->dir}/{$name}.tpl.php";
@@ -192,30 +174,36 @@ class View
         if(!is_file($file_path)){
             return [
                 'status'    =>  false,
-                'message'   =>  Message::show("Error", "View: '{$name}' Doesn't Exist!", "red")
+                'message'   =>  Message::show("Error", "View: '{$name}' Doesn't Exist", "red")
             ];
         }
 
         if(unlink($file_path)){
             return [
                 'status'    =>  true,
-                'message'   =>  Message::show("Success", "View '{$name}' removed successfully.")
+                'message'   =>  Message::show("Success", "View '{$name}' removed successfully")
             ];
         };
         
         return [
             'status'    =>  false,
-            'message'   =>  Message::show("Error", "Something went wrong! unable to remove View!", 'red')
+            'message'   =>  Message::show("Error", "Something went wrong! unable to remove View", 'red')
         ];
     }
 
     // Views List
     public function list(): array
     {
-        $path = $this->args[1] ?? '';
+        $path = $this->args[0] ?? '';
         $path = trim($path, '/');
-
         if($path) $this->dir = "{$this->dir}/$path";
+
+        if(!is_dir($this->dir)){
+            return [
+                'status'    =>  false,
+                'message'   =>  Message::show("Error", "Directory: '{$this->dir}' Doesn't Exist", "red")
+            ];
+        }
         
         $files = Directory::files($this->dir, 'php');
         return array_map(function($file){
