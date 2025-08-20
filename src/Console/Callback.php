@@ -31,7 +31,7 @@ class Callback
         if(isset($this->args[0]) && $this->args[0]){
             $params = explode(':', $this->args[0]);
             $service = $params[0];
-            $action = $params[1] ?? null;
+            $action = (isset($params[1]) && $params[1]) ? $params[1] : null;
             array_shift($this->args);
             $result = $this->action($service, $action);
             print_r($result['message'] ?? $result);
@@ -45,6 +45,7 @@ class Callback
     /**
      * @param string $service Service to call. Example middleware,model etc.
      * @param ?string $action Action to call. Example create,modify etc.
+     * @return string|array
      */
     private function action(string $service, ?string $action): string|array
     {
