@@ -121,7 +121,7 @@ class ErrorHandler
             mkdir($logDir, 0775, true);
         }
 
-        $logFile = $logDir . '/error-' . date('Y-m-d') . '.log';
+        $logFile = $logDir . '/error-' . time() . '.log';
 
         $log = sprintf(
             "[%s] %s: %s in %s on line %d\nTrace:\n%s\n\n",
