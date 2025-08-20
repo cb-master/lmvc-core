@@ -153,44 +153,60 @@ class Controller
     }
 
     // Rename Controller
-    public function rename(): string
+    public function rename(): array
     {
         // Check Controller Name is Alphabetic or Not Blank or No Special Character
         $old_name = $this->args[0] ?? '';
         $new_name = $this->args[1] ?? '';
 
-        if(!preg_match('/^[a-zA-Z_]+$/', $old_name)){
-            return Message::show("Error", "Controller old name: '{$old_name}' is invalid!", "red");
-        }
+        if(!preg_match('/^[a-zA-Z_]+$/', $old_name)) return [
+                'status'    =>  false,
+                'message'   =>  Message::show("Error", "Controller old name: '{$old_name}' is invalid!", "red")
+            ];
 
-        if(!preg_match('/^[a-zA-Z_]+$/', $new_name)){
-            return Message::show("Error", "Controller new name: '{$new_name}' is invalid!", "red");
-        }
+        if(!preg_match('/^[a-zA-Z_]+$/', $new_name)) return [
+            'status'    =>  false,
+            'message'   =>  Message::show("Error", "Controller new name: '{$new_name}' is invalid!", "red")
+        ];
 
-        // Get File Path
+        // Get File Paths
         $old_file_path = "{$this->dir}/{$old_name}.php";
         $new_file_path = "{$this->dir}/{$new_name}.php";
 
         // Check File Exist
-        if(!file_exists($old_file_path)){
-            return Message::show("Error", "Old Controller: '{$old_name}' Doesn't Exist!", "red");
-        }
+        if(!is_file($old_file_path)) return [
+            'status'    =>  false,
+            'message'   =>  Message::show("Error", "Old Controller: '{$old_name}' Doesn't Exist!", "red")
+        ];
 
         // Check New Named File Does Not Exist
-        if(file_exists($new_file_path)){
-            return Message::show("Error", "New Controller: '{$new_name}' Already Exist!", "red");
-        }
+        if(is_file($new_file_path)) return [
+            'status'    =>  false,
+            'message'   =>  Message::show("Error", "New Controller: '{$new_name}' Already Exist!", "red")
+        ];
 
+        // Read Old Controller File
         $content = file_get_contents($old_file_path);
-        $content = str_replace($old_name, $new_name, $content);
+        // Change Class Name
+        $content = preg_replace('/class \S+/i', "class {$new_name}", $content);
 
-        if(file_put_contents($new_file_path, $content) === false){
-            return Message::show("Error", "Something Went Wrong! Unable to Rename '{$old_file_path}' to '{$new_file_path}'", 'red');
-        }
+        // Write New Controller File
+        if(file_put_contents($new_file_path, $content) === false) return [
+            'status'    =>  false,
+            'message'   =>  Message::show("Error", "Something Went Wrong! Unable to Rename '{$old_file_path}' to '{$new_file_path}'", 'red')
+        ];
 
-        if(unlink($old_file_path)) return Message::show("Success", "Controller Renamed: From '{$old_name}' to '{$new_name}' Successfully.");
+        // Remove Old Controller File
+        if(unlink($old_file_path)) return [
+            'status'    =>  true,
+            'message'   =>  Message::show("Success", "Controller Renamed: From '{$old_name}' to '{$new_name}' Successfully.")
+        ];
 
-        return Message::show("Error", "Something Went Wrong! Unable to Rename Controller!", 'red');
+        // If unable to remove old file
+        return [
+            'status'    =>  false,
+            'message'   =>  Message::show("Error", "Something Went Wrong! Unable to Remove Old Controller File: '{$old_file_path}'", 'red')
+        ];
         
     }
 
