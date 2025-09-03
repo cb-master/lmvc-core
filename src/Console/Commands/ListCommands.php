@@ -11,17 +11,19 @@
 declare(strict_types=1);
 
 // Namespace
-namespace CBM\Core\Console;
+namespace CBM\Core\Console\Commands;
 
-// Deny Direct Access
-defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!');
+use CBM\Core\Console\Command;
 
-class Runner
+class ListCommands Extends Command
 {
-    public static function run(array $args)
+    /**
+     * Run the command to create a new controller.
+     *
+     * @param array $params
+     */
+    public function run(array $params): void
     {
-        array_shift($args);
-        $callback = new Callback($args);
-        $callback->register();
+        $this->info('List of Commands');
     }
 }
