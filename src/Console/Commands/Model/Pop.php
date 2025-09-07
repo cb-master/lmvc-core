@@ -11,21 +11,20 @@
 declare(strict_types=1);
 
 // Namespace
-namespace CBM\Core\Console\Commands\Controller;
+namespace CBM\Core\Console\Commands\Model;
 
-use CBM\Core\Console\Command;
+use CBM\Core\{Console\Command, Directory};
 
-// Remove Controller Class
 class Pop Extends Command
 {
-    // App Controller Path
-    protected string $path = BASE_PATH . '/app/Controller';
+    // App Model Path
+    protected string $path = BASE_PATH . '/app/Model';
 
     // Accepted Regular Expresion
     private string $exp = '/^[a-zA-Z_\/]+$/';
 
     /**
-     * Run The Command to Remove a Controller.
+     * Run the command to create a new controller.
      *
      * @param array $params
      */
@@ -33,36 +32,36 @@ class Pop Extends Command
     {
         // Check Parameters
         if(count($params) < 1){
-            $this->error("USAGE: laika pop:controller <name>");
+            $this->error("USAGE: laika pop:model <name>");
             return;
         }
 
-        // Check Controller Name is Valid
         if(!preg_match($this->exp, $params[0])){
-            // Invalid Controller Name
-            $this->error("Invalid Controller Name: '{$params[0]}'");
+            // Invalid Name
+            $this->error("Invalid Model Name: {$params[0]}");
             return;
         }
 
-        // Get Controller Parts
+        // Get Parts
         $parts = $this->parts($params[0]);
 
-        // Set Path
+        // Get Path
         $this->path .= $parts['path'];
+
 
         $file = "{$this->path}/{$parts['name']}.php";
 
-         // Check Controller Path is Valid
         if(!is_file($file)){
-            $this->error("Invalid Controller or Path: '{$params[0]}'");
+            $this->error("Model Doesn't Exist: {$file}");
             return;
         }
 
         if(!unlink($file)){
-            $this->error("Failed to Remove Controller: '{$file}'");
+            $this->error("Failed to Remove Model: {$file}");
             return;
         }
-        
-        $this->info("Controller Removed Successfully: '{$params[0]}'");
+
+        $this->info("Model Created Successfully: {$params[0]}");
+        return;
     }
 }

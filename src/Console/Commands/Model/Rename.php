@@ -11,24 +11,24 @@
 declare(strict_types=1);
 
 // Namespace
-namespace CBM\Core\Console\Commands\Controller;
+namespace CBM\Core\Console\Commands\Model;
 
 use CBM\Core\{Console\Command, Directory};
 
-// Rename Controller Class
+// Rename Model Class
 class Rename Extends Command
 {
-    // App Controller Old Path
-    protected string $old_path = BASE_PATH . '/app/Controller';
+    // App Model Old Path
+    protected string $old_path = BASE_PATH . '/app/Model';
     
-    // App Controller New Path
-    protected string $new_path = BASE_PATH . '/app/Controller';
+    // App Model New Path
+    protected string $new_path = BASE_PATH . '/app/Model';
 
     // Accepted Regular Expresion
     private string $exp = '/^[a-zA-Z_\/]+$/';
 
     /**
-     * Run The Command to Remove a Controller.
+     * Run The Command to Remove a Model.
      *
      * @param array $params
      */
@@ -36,7 +36,7 @@ class Rename Extends Command
     {
         // Check Parameters
         if(count($params) < 2){
-            $this->error("USAGE: laika rename:controller <old_name> <new_name>");
+            $this->error("Usage: laika rename:model <old_name> <new_name>");
             return;
         }
 
@@ -44,16 +44,16 @@ class Rename Extends Command
         $old = $params[0];
         $new = $params[1];
 
-        // Check Old Controller Name is Valid
+        // Check Old Model Name is Valid
         if(!preg_match($this->exp, $old)){
-            // Invalid Controller Name
-            $this->error("Invalid Old Controller Name: '{$old}'");
+            // Invalid Model Name
+            $this->error("Invalid Old Model Name: '{$old}'");
             return;
         }
-        // Check New Controller Name is Valid
+        // Check New Model Name is Valid
         if(!preg_match($this->exp, $new)){
-            // Invalid Controller Name
-            $this->error("Invalid New Controller Name: '{$old}'");
+            // Invalid Model Name
+            $this->error("Invalid New Model Name: '{$old}'");
             return;
         }
 
@@ -66,15 +66,15 @@ class Rename Extends Command
         $this->new_path .= $new_parts['path'];
 
          // Old and New Namespace
-        $old_namespace = "namespace CBM\\App\\Controller{$old_parts['namespace']}";
-        $new_namespace = "namespace CBM\\App\\Controller{$new_parts['namespace']}";
+        $old_namespace = "namespace CBM\\App\\Model{$old_parts['namespace']}";
+        $new_namespace = "namespace CBM\\App\\Model{$new_parts['namespace']}";
 
         $old_file = "{$this->old_path}/{$old_parts['name']}.php";
         $new_file = "{$this->new_path}/{$new_parts['name']}.php";
 
-        // Check Old Controller Path is Valid
+        // Check Old Model Path is Valid
         if(!is_file($old_file)){
-            $this->error("Invalid Controller Name or Path: '$old'");
+            $this->error("Invalid Model Name or Path: '$old'");
             return;
         }
 
@@ -83,16 +83,16 @@ class Rename Extends Command
             Directory::make($this->new_path);
         }
 
-        // Check New Controller Path is Valid
+        // Check New Model Path is Valid
         if(is_file($new_file)){
-            $this->error("New Controller Already Exist: '$old'");
+            $this->error("New Model Already Exist: '$old'");
             return;
         }
 
         // Get Contents
         $content = file_get_contents($old_file);
         if($content === false){
-            $this->error("Failed to Read Controller: '{$old}'");
+            $this->error("Failed to Read Model: '{$old}'");
             return;
         }
 
@@ -102,20 +102,20 @@ class Rename Extends Command
         // Replace Class Name
         $content = preg_replace("/class {$old_parts['name']}/i", "class {$new_parts['name']}", $content);
 
-        // Create New Controller File
+        // Create New Model File
         if(file_put_contents($new_file, $content) === false){
-            $this->error("Failed to Create Controller: {$new}");
+            $this->error("Failed to Create Model: {$new}");
             return;
         }
 
-        // Remove Old Controller File
+        // Remove Old Model File
 
         if(!unlink($old_file)){
-            $this->error("Failed to Remove Controller: '{$old_file}'");
+            $this->error("Failed to Remove Model: '{$old_file}'");
             return;
-        }        
+        }
         
-        
-        $this->info("Controller Renamed Successfully: '{$old}'->'{$new}'");
+        $this->info("Model Renamed Successfully: '{$old}'->'{$new}'");
+        return;
     }
 }

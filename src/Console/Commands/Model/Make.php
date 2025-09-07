@@ -11,46 +11,47 @@
 declare(strict_types=1);
 
 // Namespace
-namespace CBM\Core\Console\Commands\Middleware;
+namespace CBM\Core\Console\Commands\Model;
 
-use CBM\Core\{Console\Command, Directory};
+use CBM\Core\{Console\Command,Directory};
 
-// Make Middleware Class
 class Make Extends Command
 {
-    // App Middleware Path
-    protected string $path = BASE_PATH . '/app/Middleware';
+    // App Model Path
+    protected string $path = BASE_PATH . '/app/Model';
 
     // Accepted Regular Expresion
     private string $exp = '/^[a-zA-Z_\/]+$/';
 
     /**
-     * Run The Command to Create a New Middleware.
+     * Run the command to create a new controller.
      *
      * @param array $params
-     * @return void
      */
     public function run(array $params): void
     {
         // Check Parameters
         if(count($params) < 1){
-            $this->error("USAGE: laika make:middleware <name>");
+            $this->error("USAGE: laika make:model <name> <table::optional> <id::optional>");
             return;
         }
+
+        // Table Name
+        $table = $params[1] ?? 'table_name';
+
+        // Primary Key Name
+        $id = $params[2] ?? 'id';
 
         if(!preg_match($this->exp, $params[0])){
             // Invalid Name
-            $this->error("Invalid Middleware Name: '{$params[0]}'");
+            $this->error("Invalid Model Name: '{$params[0]}'");
             return;
         }
-
-        // Get Parts
         $parts = $this->parts($params[0]);
 
-        //Get Path
-        $this->path .=  $parts['path'];
-
-        // Make Directory if Not Exists
+        $this->path .= $parts['path'];
+        
+        // Make Directory if Not Exist
         if(!Directory::exists($this->path)){
             Directory::make($this->path);
         }
@@ -58,21 +59,32 @@ class Make Extends Command
         $file = "{$this->path}/{$parts['name']}.php";
 
         if(is_file($file)){
-            $this->error("Middleware Already Exist: {$file}");
+            $this->error("Model Already Exist: {$file}");
             return;
         }
 
         // Get Sample Content
-        $content = file_get_contents(__DIR__ . '/../../Samples/Middleware.sample');
+        $content = file_get_contents(__DIR__ . '/../../Samples/Model.sample');
 
         // Replace Placeholders
-        $content = str_replace(['{{NAMESPACE}}','{{NAME}}'], [$parts['namespace'],$parts['name']], $content);
+        $content = str_replace([
+            '{{NAMESPACE}}',
+            '{{NAME}}',
+            '{{TABLE_NAME}}',
+            '{{PRIMARY_KEY}}'
+        ],[
+            $parts['namespace'],
+            $parts['name'],
+            $table,
+            $id
+        ], $content);
 
         if(file_put_contents($file, $content) === false){
-            $this->error("Failed to Create Middleware: {$file}");
+            $this->error("Failed to Create Model: {$file}");
             return;
         }
 
-        $this->info("Middleware Created Successfully: {$params[0]}");
+        $this->info("Model Created Successfully: {$params[0]}");
+        return;
     }
 }

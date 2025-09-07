@@ -11,22 +11,22 @@
 declare(strict_types=1);
 
 // Namespace
-namespace CBM\Core\Console\Commands\Middleware;
+namespace CBM\Core\Console\Commands\Model;
 
 use CBM\Core\{Console\Command, Directory};
 
 
-// Make Middleware Class
+// Make Model Class
 class Lists Extends Command
 {
-    // App Middleware Path
-    protected string $path = BASE_PATH . '/app/Middleware';
+    // App Model Path
+    protected string $path = BASE_PATH . '/app/Model';
 
     // Accepted Regular Expresion
     private string $exp = '/^[a-zA-Z_\/]+$/';
 
     /**
-     * Run The Command to Create a New Middleware.
+     * Run The Command to Create a New Model.
      *
      * @param array $params
      */
@@ -35,10 +35,10 @@ class Lists Extends Command
         // Path
         $path = trim($params[0] ?? '', '/');
 
-        // Check Middleware Name is Valid
+        // Check Model Name is Valid
         if($path && !preg_match($this->exp, $path)){
-            // Invalid Middleware Name
-            $this->error("Invalid Middleware Path: '{$path}'");
+            // Invalid Model Name
+            $this->error("Invalid Model Path: '{$path}'");
             return;
         }
 
@@ -52,7 +52,7 @@ class Lists Extends Command
 
         // Check Path Exist
         if(!Directory::exists($this->path)){
-            $this->error("Middleware Path Not Found: '{$this->path}'");
+            $this->error("Model Path Not Found: '{$this->path}'");
             return;
         }
 
@@ -61,18 +61,18 @@ class Lists Extends Command
 
         echo <<<PHP
         -------------------------------------------------------------------
-        LIST OF MIDDLEWARE CLASSES:
+        LIST OF MODEL CLASSES:
         -------------------------------------------------------------------\n
         PHP;
         foreach($paths as $path){
             if(is_file($path)){
                 $total++;
-                echo "\t>> ".'CBM\\App\\Middleware\\'.str_replace([BASE_PATH . '/app/Middleware/', '.php','/'], ['','','\\'], $path)."\n";
+                echo "\t>> ".'CBM\\App\\Model\\'.str_replace([BASE_PATH . '/app/Model/', '.php','/'], ['','','\\'], $path)."\n";
             }
         }
         echo <<<TOTAL
         -------------------------------------------------------------------
-        Total Middlewares: {$total}\n\n
+        Total Models: {$total}\n\n
         TOTAL;
 
         return;

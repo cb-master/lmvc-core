@@ -11,7 +11,7 @@
 declare(strict_types=1);
 
 // Namespace
-namespace CBM\App\Controller;
+namespace CBM\App\Model{{NAMESPACE}};
 
 // Deny Direct Access
 defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!');
@@ -24,5 +24,5 @@ class {{NAME}} Extends Model
     protected string $table = '{{TABLE_NAME}}';
 
     // Primary Key Column Name
-    protected string $id = '{{TABLE_ID}}';
+    protected string $id = '{{PRIMARY_KEY}}';
 }

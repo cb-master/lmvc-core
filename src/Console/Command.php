@@ -48,9 +48,10 @@ abstract class Command
 
     /**
      * @param string $str. Directory Path Stringl. Example: 'Admin/User'
+     * @param bool $ucfirst. First Character of All Folders Will Be Upper Case. Default is true
      * @return array results with keys 'name', 'path', 'namespace'
      */
-    protected function parts(string $str): array
+    protected function parts(string $str, bool $ucfirst = true): array
     {
         $str = trim($str, '/');
         $parts = explode('/', $str);
@@ -62,7 +63,9 @@ abstract class Command
 
         // $parts = array_map('ucfirst', $parts);
         foreach($parts as $part){
-            $part = ucfirst($part);
+            // Ucfirst if true
+            if($ucfirst) $part = ucfirst($part);
+
             $result['path']     .=   "/{$part}";
             $result['namespace'].=   "\\{$part}";
         }
