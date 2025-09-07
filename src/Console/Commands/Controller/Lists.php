@@ -11,13 +11,13 @@
 declare(strict_types=1);
 
 // Namespace
-namespace CBM\Core\Console\Commands;
+namespace CBM\Core\Console\Commands\Controller;
 
 use CBM\Core\{Console\Command, Directory};
 
 
 // Make Controller Class
-class ListController Extends Command
+class Lists Extends Command
 {
     // App Controller Path
     protected string $path = BASE_PATH . '/app/Controller';

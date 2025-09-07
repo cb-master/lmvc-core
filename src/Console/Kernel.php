@@ -58,15 +58,15 @@ class Kernel
     {
         $this->commands = [
             // Controller Commands
-            'make:controller'   =>  \CBM\Core\Console\Commands\MakeController::class, // Complete
-            'rename:controller' =>  \CBM\Core\Console\Commands\RenameController::class, // Complete
-            'pop:controller'    =>  \CBM\Core\Console\Commands\PopController::class, // Complete
-            'list:controller'   =>  \CBM\Core\Console\Commands\ListController::class, // Complete
+            'make:controller'   =>  \CBM\Core\Console\Commands\Controller\Make::class, // Complete
+            'rename:controller' =>  \CBM\Core\Console\Commands\Controller\Rename::class, // Complete
+            'pop:controller'    =>  \CBM\Core\Console\Commands\Controller\Pop::class, // Complete
+            'list:controller'   =>  \CBM\Core\Console\Commands\Controller\Lists::class, // Complete
             // Middleware Commands
-            'make:middleware'   =>  \CBM\Core\Console\Commands\MakeMiddleware::class,
-            'rename:middleware' =>  \CBM\Core\Console\Commands\RenameMiddleware::class,
-            'pop:middleware'    =>  \CBM\Core\Console\Commands\PopMiddleware::class,
-            'list:middleware'   =>  \CBM\Core\Console\Commands\ListMiddleware::class,
+            'make:middleware'   =>  \CBM\Core\Console\Commands\Middleware\Make::class,
+            'rename:middleware' =>  \CBM\Core\Console\Commands\Middleware\Rename::class,
+            'pop:middleware'    =>  \CBM\Core\Console\Commands\Middleware\Pop::class,
+            'list:middleware'   =>  \CBM\Core\Console\Commands\Middleware\Lists::class,
             // Model Commands
             'make:model'        =>  \CBM\Core\Console\Commands\MakeModel::class,
             'rename:model'      =>  \CBM\Core\Console\Commands\RenameModel::class,

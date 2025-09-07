@@ -11,13 +11,13 @@
 declare(strict_types=1);
 
 // Namespace
-namespace CBM\Core\Console\Commands;
+namespace CBM\Core\Console\Commands\Controller;
 
 use CBM\Core\{Console\Command, Directory};
 
 
 // Make Controller Class
-class MakeController Extends Command
+class Make Extends Command
 {
     // App Controller Path
     protected string $path = BASE_PATH . '/app/Controller';
@@ -131,7 +131,7 @@ class MakeController Extends Command
         }
 
         // Get Sample Controller Content
-        $content = file_get_contents(__DIR__ . '/../Samples/Controller.sample');
+        $content = file_get_contents(__DIR__ . '/../../Samples/Controller.sample');
 
         // $sub_namespace = $sub_namespace ?: '';
 
@@ -145,7 +145,7 @@ class MakeController Extends Command
 
         if(!is_file($view_file)){
             // Get Sample View Content
-            $view_content = file_get_contents(__DIR__ . '/../Samples/View.sample');
+            $view_content = file_get_contents(__DIR__ . '/../../Samples/View.sample');
             // Replace Placeholders
             $view_content = str_replace('{{NAME}}', $view, $view_content);
 

@@ -11,12 +11,12 @@
 declare(strict_types=1);
 
 // Namespace
-namespace CBM\Core\Console\Commands;
+namespace CBM\Core\Console\Commands\Controller;
 
 use CBM\Core\Console\Command;
 
 // Remove Controller Class
-class PopController Extends Command
+class Pop Extends Command
 {
     // App Controller Path
     protected string $path = BASE_PATH . '/app/Controller';
