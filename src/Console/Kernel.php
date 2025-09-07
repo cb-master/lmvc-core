@@ -58,39 +58,49 @@ class Kernel
     {
         $this->commands = [
             // Controller Commands
-            'make:controller'   =>  \CBM\Core\Console\Commands\MakeController::class, // Complete
-            'rename:controller' =>  \CBM\Core\Console\Commands\RenameController::class, // Complete
-            'pop:controller'    =>  \CBM\Core\Console\Commands\PopController::class, // Complete
-            'list:controller'   =>  \CBM\Core\Console\Commands\ListController::class, // Complete
+            'make:controller'   =>  \CBM\Core\Console\Commands\Controller\Make::class,
+            'rename:controller' =>  \CBM\Core\Console\Commands\Controller\Rename::class,
+            'pop:controller'    =>  \CBM\Core\Console\Commands\Controller\Pop::class,
+            'list:controller'   =>  \CBM\Core\Console\Commands\Controller\Lists::class,
             // Middleware Commands
-            'make:middleware'   =>  \CBM\Core\Console\Commands\MakeMiddleware::class,
-            'rename:middleware' =>  \CBM\Core\Console\Commands\RenameMiddleware::class,
-            'pop:middleware'    =>  \CBM\Core\Console\Commands\PopMiddleware::class,
-            'list:middleware'   =>  \CBM\Core\Console\Commands\ListMiddleware::class,
+            'make:middleware'   =>  \CBM\Core\Console\Commands\Middleware\Make::class,
+            'rename:middleware' =>  \CBM\Core\Console\Commands\Middleware\Rename::class,
+            'pop:middleware'    =>  \CBM\Core\Console\Commands\Middleware\Pop::class,
+            'list:middleware'   =>  \CBM\Core\Console\Commands\Middleware\Lists::class,
             // Model Commands
-            'make:model'        =>  \CBM\Core\Console\Commands\MakeModel::class,
-            'rename:model'      =>  \CBM\Core\Console\Commands\RenameModel::class,
-            'pop:model'         =>  \CBM\Core\Console\Commands\PopModel::class,
+            'make:model'        =>  \CBM\Core\Console\Commands\Model\Make::class,
+            'rename:model'      =>  \CBM\Core\Console\Commands\Model\Rename::class,
+            'pop:model'         =>  \CBM\Core\Console\Commands\Model\Pop::class,
+            'list:model'        =>  \CBM\Core\Console\Commands\Model\Lists::class,
             // View Commands
-            'make:view'         =>  \CBM\Core\Console\Commands\MakeView::class,
-            'rename:view'       =>  \CBM\Core\Console\Commands\RenameView::class,
-            'pop:view'          =>  \CBM\Core\Console\Commands\PopView::class,
+            'make:view'         =>  \CBM\Core\Console\Commands\View\Make::class,
+            'rename:view'       =>  \CBM\Core\Console\Commands\View\Rename::class,
+            'pop:view'          =>  \CBM\Core\Console\Commands\View\Pop::class,
+            'list:view'         =>  \CBM\Core\Console\Commands\View\Lists::class,
+            // Template Commands
+            'make:template'     =>  \CBM\Core\Console\Commands\Template\Make::class,
+            'rename:template'   =>  \CBM\Core\Console\Commands\Template\Rename::class,
+            'pop:template'      =>  \CBM\Core\Console\Commands\Template\Pop::class,
+            'list:template'     =>  \CBM\Core\Console\Commands\Template\Lists::class,
             // Other Commands
             'list'              =>  \CBM\Core\Console\Commands\ListCommands::class,
-            'help'              =>  \CBM\Core\Console\Commands\HelpCommands::class
+            'help'              =>  \CBM\Core\Console\Commands\ListCommands::class
         ];
     }
 
     protected function printHelp()
     {
-        echo "\n##################################\n";
-        echo "LAIKA CLI TOOL\n";
-        echo "Usage: laika <command> [options]\n";
-        echo "##################################\n\n";
-        echo "Available Commands:\n\n";
-        array_filter($this->commands, function($command){
-            echo "\t$command\n";
-        }, ARRAY_FILTER_USE_KEY);
-        echo "\n";
+        echo <<<COMMON
+        ##################################
+        LAIKA CLI TOOL
+        Usage: php laika <command> [options]
+        ##################################
+
+        AVAILABLE COMMANDS\n
+        COMMON;
+        $keys = array_keys($this->commands);
+        foreach($keys as $key){
+            echo "\t-> {$key}\n";
+        }
     }
 }

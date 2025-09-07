@@ -11,16 +11,19 @@
 declare(strict_types=1);
 
 // Namespace
-namespace CBM\Core\Console\Commands;
+namespace CBM\Core\Console\Commands\Controller;
 
 use CBM\Core\{Console\Command, Directory};
 
 
 // Make Controller Class
-class ListController Extends Command
+class Lists Extends Command
 {
     // App Controller Path
     protected string $path = BASE_PATH . '/app/Controller';
+
+    // Accepted Regular Expresion
+    private string $exp = '/^[a-zA-Z_\/]+$/';
 
     /**
      * Run The Command to Create a New Controller.
@@ -29,47 +32,47 @@ class ListController Extends Command
      */
     public function run(array $params): void
     {
-        // Name
-        $path = $params[0] ?? '';
-        $trimed_path = trim($path, '/');
+        // Path
+        $path = trim($params[0] ?? '', '/');
 
         // Check Controller Name is Valid
-        if($trimed_path && !preg_match('/^[a-zA-Z\/]+$/', $trimed_path)){
+        if($path && !preg_match($this->exp, $path)){
             // Invalid Controller Name
             $this->error("Invalid Controller Path: '{$path}'");
             return;
         }
 
-        $path_parts = explode('/', $trimed_path);
-        if(!empty($path_parts) && $path_parts[0]){
-            foreach ($path_parts as $part) {
-                if (!$part) {
-                    $this->error("Invalid Controller Path: '{$path}'");
-                    return;
-                }
-                $this->path .= '/'.ucfirst($part);
-            }
+        // Get Path if Given
+        if($path){
+            // Get Parts
+            $exploded = explode('/',$path);
+            $parts = array_map('ucfirst', $exploded);
+            $this->path .= '/' . implode('/', $parts);
         }
 
         // Check Path Exist
         if(!Directory::exists($this->path)){
-            $this->error("Controller Path Not Found: '{$path}'");
+            $this->error("Controller Path Not Found: '{$this->path}'");
             return;
         }
 
         $paths = Directory::scanRecursive($this->path, true, 'php');
-        $total = count($paths);
+        $total = 0;
+
         echo <<<PHP
         -------------------------------------------------------------------
-        LIST OF CONTROLLERS:
+        LIST OF CONTROLLER CLASSES:
         -------------------------------------------------------------------\n
         PHP;
         foreach($paths as $path){
-            if(is_file($path)) echo "\t>> ".'CBM\\App\\Controller\\'.str_replace([BASE_PATH . '/app/Controller/', '.php','/'], ['','','\\'], $path)."\n";
+            if(is_file($path)){
+                $total++;
+                echo "\t>> ".'CBM\\App\\Controller\\'.str_replace([BASE_PATH . '/app/Controller/', '.php','/'], ['','','\\'], $path)."\n";
+            }
         }
         echo <<<TOTAL
         -------------------------------------------------------------------
-        Total Controllers Found: {$total}\n\n
+        Total Controllers: {$total}\n\n
         TOTAL;
 
         return;

@@ -16,6 +16,7 @@ namespace CBM\Core\Console;
 // Deny Direct Access
 defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
+// Abstract Command Class
 abstract class Command
 {
     /**
@@ -43,5 +44,32 @@ abstract class Command
     {
         // Red Text
         echo "\033[31m[ERROR]>> \033[0m{$message}\n";
+    }
+
+    /**
+     * @param string $str. Directory Path Stringl. Example: 'Admin/User'
+     * @param bool $ucfirst. First Character of All Folders Will Be Upper Case. Default is true
+     * @return array results with keys 'name', 'path', 'namespace'
+     */
+    protected function parts(string $str, bool $ucfirst = true): array
+    {
+        $str = trim($str, '/');
+        $parts = explode('/', $str);
+
+        // Get File Name
+        $result['name']     =   array_pop($parts);
+        $result['path']     =   '';
+        $result['namespace']=   '';
+
+        // $parts = array_map('ucfirst', $parts);
+        foreach($parts as $part){
+            // Ucfirst if true
+            if($ucfirst) $part = ucfirst($part);
+
+            $result['path']     .=   "/{$part}";
+            $result['namespace'].=   "\\{$part}";
+        }
+
+        return $result;
     }
 }
