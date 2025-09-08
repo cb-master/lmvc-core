@@ -81,7 +81,7 @@ class Uri
     /**
      * @return string
      */
-    public static function directory():string
+    public static function directory(): string
     {
         return trim(self::instance()->directory, '/');
     }
@@ -90,7 +90,7 @@ class Uri
     /**
      * * @return string Path/Sub Folder
      */
-    public static function path():string
+    public static function path(): string
     {
         return trim(str_replace(self::instance()->directory, '', self::instance()->path), '/');
     }
@@ -99,7 +99,7 @@ class Uri
     /**
      * * @return array Query Strings
      */
-    public static function query():array
+    public static function query(): array
     {
         parse_str(self::instance()->queryString, $queries);
         return $queries;
