@@ -25,8 +25,6 @@ class Pop Extends Command
     private string $exp = '/^[a-zA-Z_\/]+$/';
 
     /**
-     * Run The Command to Remove a Controller.
-     *
      * @param array $params
      */
     public function run(array $params): void

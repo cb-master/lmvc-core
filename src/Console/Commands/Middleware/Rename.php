@@ -25,8 +25,6 @@ class Rename Extends Command
     protected string $new_path = BASE_PATH . '/app/Middleware';
 
     /**
-     * Run The Command to Remove a Middleware.
-     *
      * @param array $params
      */
     public function run(array $params): void

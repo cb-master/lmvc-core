@@ -11,17 +11,17 @@
 declare(strict_types=1);
 
 // Namespace
-namespace CBM\Core\Console\Commands\Model;
+namespace CBM\Core\Console\Commands\Template;
 
 use CBM\Core\{Console\Command,Directory};
 
 class Make Extends Command
 {
-    // App Model Path
-    protected string $path = BASE_PATH . '/app/Model';
+    // App Template Path
+    protected string $path = BASE_PATH . '/app/Views';
 
     // Accepted Regular Expresion
-    private string $exp = '/^[a-zA-Z_\/]+$/';
+    private string $exp = '/^[a-zA-Z0-9_\-\/]+$/';
 
     /**
      * @param array $params
@@ -30,22 +30,16 @@ class Make Extends Command
     {
         // Check Parameters
         if(count($params) < 1){
-            $this->error("USAGE: laika make:model <name> <table::optional> <id::optional>");
+            $this->error("USAGE: laika make:template <name>");
             return;
         }
-
-        // Table Name
-        $table = $params[1] ?? 'table_name';
-
-        // Primary Key Name
-        $id = $params[2] ?? 'id';
 
         if(!preg_match($this->exp, $params[0])){
             // Invalid Name
-            $this->error("Invalid Model Name: '{$params[0]}'");
+            $this->error("Invalid Template Name: '{$params[0]}'");
             return;
         }
-        $parts = $this->parts($params[0]);
+        $parts = $this->parts($params[0], false);
 
         $this->path .= $parts['path'];
         
@@ -54,35 +48,25 @@ class Make Extends Command
             Directory::make($this->path);
         }
 
-        $file = "{$this->path}/{$parts['name']}.php";
+        $file = "{$this->path}/tpl-{$parts['name']}.tpl.php";
 
         if(is_file($file)){
-            $this->error("Model Already Exist: {$file}");
+            $this->error("Template Already Exist: {$file}");
             return;
         }
 
         // Get Sample Content
-        $content = file_get_contents(__DIR__ . '/../../Samples/Model.sample');
+        $content = file_get_contents(__DIR__ . '/../../Samples/TemplateView.sample');
 
         // Replace Placeholders
-        $content = str_replace([
-            '{{NAMESPACE}}',
-            '{{NAME}}',
-            '{{TABLE_NAME}}',
-            '{{PRIMARY_KEY}}'
-        ],[
-            $parts['namespace'],
-            $parts['name'],
-            $table,
-            $id
-        ], $content);
+        $content = str_replace('{{NAME}}',$parts['name'], $content);
 
         if(file_put_contents($file, $content) === false){
-            $this->error("Failed to Create Model: {$file}");
+            $this->error("Failed to Create Template: {$file}");
             return;
         }
 
-        $this->info("Model Created Successfully: {$params[0]}");
+        $this->info("Template Created Successfully: {$params[0]}");
         return;
     }
 }

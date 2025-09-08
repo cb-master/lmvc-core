@@ -32,8 +32,6 @@ class Make Extends Command
     private string $view_exp = '/^[a-zA-Z0-9_\-\/]+$/';
 
     /**
-     * Run The Command to Create a New Controller.
-     *
      * @param array $params
      */
     public function run(array $params): void

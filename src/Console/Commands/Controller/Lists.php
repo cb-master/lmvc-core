@@ -26,8 +26,6 @@ class Lists Extends Command
     private string $exp = '/^[a-zA-Z_\/]+$/';
 
     /**
-     * Run The Command to Create a New Controller.
-     *
      * @param array $params
      */
     public function run(array $params): void

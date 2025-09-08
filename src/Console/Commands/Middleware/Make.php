@@ -25,8 +25,6 @@ class Make Extends Command
     private string $exp = '/^[a-zA-Z_\/]+$/';
 
     /**
-     * Run The Command to Create a New Middleware.
-     *
      * @param array $params
      * @return void
      */
