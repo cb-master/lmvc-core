@@ -11,19 +11,19 @@
 declare(strict_types=1);
 
 // Namespace
-namespace CBM\Core\Console\Commands\Model;
+namespace CBM\Core\Console\Commands\Template;
 
 use CBM\Core\{Console\Command, Directory};
 
 
-// Make Model Class
+// Make Template Class
 class Lists Extends Command
 {
-    // App Model Path
-    protected string $path = BASE_PATH . '/app/Model';
+    // App Template Path
+    protected string $path = BASE_PATH . '/app/Views';
 
     // Accepted Regular Expresion
-    private string $exp = '/^[a-zA-Z_\/]+$/';
+    private string $exp = '/^[a-zA-Z0-9_\-\/]+$/';
 
     /**
      * @param array $params
@@ -33,24 +33,19 @@ class Lists Extends Command
         // Path
         $path = trim($params[0] ?? '', '/');
 
-        // Check Model Name is Valid
+        // Check Template Name is Valid
         if($path && !preg_match($this->exp, $path)){
-            // Invalid Model Name
-            $this->error("Invalid Model Path: '{$path}'");
+            // Invalid Template Name
+            $this->error("Invalid Template Path: '{$path}'");
             return;
         }
 
         // Get Path if Given
-        if($path){
-            // Get Parts
-            $exploded = explode('/',$path);
-            $parts = array_map('ucfirst', $exploded);
-            $this->path .= '/' . implode('/', $parts);
-        }
+        if($path) $this->path .= "/{$path}";
 
         // Check Path Exist
         if(!Directory::exists($this->path)){
-            $this->error("Model Path Not Found: '{$this->path}'");
+            $this->error("Template Path Not Found: '{$this->path}'");
             return;
         }
 
@@ -59,18 +54,21 @@ class Lists Extends Command
 
         echo <<<PHP
         -------------------------------------------------------------------
-        LIST OF MODEL CLASSES:
+        LIST OF TEMPLATE NAMES:
         -------------------------------------------------------------------\n
         PHP;
         foreach($paths as $path){
             if(is_file($path)){
-                $total++;
-                echo "\t>> ".'CBM\\App\\Model\\'.str_replace([BASE_PATH . '/app/Model/', '.php','/'], ['','','\\'], $path)."\n";
+                $str = str_replace([$this->path.'/', '.tpl.php'], [''], $path);
+                if(strpos($str, 'tpl-') === 0){
+                    $total++;
+                    echo "\t>> {$str}\n";
+                }
             }
         }
         echo <<<TOTAL
         -------------------------------------------------------------------
-        Total Models: {$total}\n\n
+        Total Templates: {$total}\n\n
         TOTAL;
 
         return;

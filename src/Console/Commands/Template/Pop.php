@@ -11,17 +11,18 @@
 declare(strict_types=1);
 
 // Namespace
-namespace CBM\Core\Console\Commands\Model;
+namespace CBM\Core\Console\Commands\Template;
 
-use CBM\Core\{Console\Command, Directory};
+use CBM\Core\{Console\Command};
 
+// Remove Template File
 class Pop Extends Command
 {
-    // App Model Path
-    protected string $path = BASE_PATH . '/app/Model';
+    // App Template Path
+    protected string $path = BASE_PATH . '/app/Views';
 
     // Accepted Regular Expresion
-    private string $exp = '/^[a-zA-Z_\/]+$/';
+    private string $exp = '/^[a-zA-Z0-9_\-\/]+$/';
 
     /**
      * @param array $params
@@ -30,36 +31,36 @@ class Pop Extends Command
     {
         // Check Parameters
         if(count($params) < 1){
-            $this->error("USAGE: laika pop:model <name>");
+            $this->error("USAGE: laika pop:template <name>");
             return;
         }
 
         if(!preg_match($this->exp, $params[0])){
             // Invalid Name
-            $this->error("Invalid Model Name: {$params[0]}");
+            $this->error("Invalid Template Name: {$params[0]}");
             return;
         }
 
         // Get Parts
-        $parts = $this->parts($params[0]);
+        $parts = $this->parts($params[0], false);
 
         // Get Path
         $this->path .= $parts['path'];
 
 
-        $file = "{$this->path}/{$parts['name']}.php";
+        $file = "{$this->path}/tpl-{$parts['name']}.tpl.php";
 
         if(!is_file($file)){
-            $this->error("Model Doesn't Exist: {$file}");
+            $this->error("Template Doesn't Exist: {$file}");
             return;
         }
 
         if(!unlink($file)){
-            $this->error("Failed to Remove Model: {$file}");
+            $this->error("Failed to Remove Template: {$file}");
             return;
         }
 
-        $this->info("Model Created Successfully: {$params[0]}");
+        $this->info("Template Created Successfully: {$params[0]}");
         return;
     }
 }

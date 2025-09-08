@@ -1,11 +1,11 @@
 <!doctype html>
 <html>
     <head>
-        <title>{{ title }}</title>
+        <title>{{NAME}} | LAIKA</title>
     </head>
     <body>
         <main>
-            <h2>{{ title }}</h2>
+            <h2>Welcome to {{NAME}}</h2>
         </main>
     </body>
 </html>
