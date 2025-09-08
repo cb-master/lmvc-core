@@ -49,10 +49,8 @@ class Router
         self::instance()->middlewares = $previousMiddlewares;
     }
 
-    public function middleware(array|string|callable $middlewares): self
+    public function middleware(array|string $middlewares): self
     {
-        // self::instance()->middlewares[] = $middleware;
-        // return self::instance();
         // Wrap single item into an array
         if (!is_array($middlewares)) {
             $middlewares = [$middlewares];
