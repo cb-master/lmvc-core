@@ -72,5 +72,12 @@ class ListCommands Extends Command
             Delete  :   php laika pop:template <name>
             List    :   php laika list:template <sub_path::optional>\n\n
         TPL;
+
+        // SECRET
+        echo <<<SECRET
+        ## SECRET
+            Generate:   php laika generate:secret <byte_number::optional>
+            Pop     :   php laika pop:secret\n\n
+        SECRET;
     }
 }
