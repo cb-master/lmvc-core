@@ -83,8 +83,12 @@ class Kernel
             'pop:template'      =>  \CBM\Core\Console\Commands\Template\Pop::class,
             'list:template'     =>  \CBM\Core\Console\Commands\Template\Lists::class,
             // Other Commands
-            'list'              =>  \CBM\Core\Console\Commands\ListCommands::class,
-            'help'              =>  \CBM\Core\Console\Commands\ListCommands::class
+            'help'              =>  \CBM\Core\Console\Commands\ListCommands::class,
+            // Migrate
+            'migrate'           =>  \CBM\Core\Console\Commands\Migrate::class,
+            // Secret Key
+            'generate:secret'   =>  \CBM\Core\Console\Commands\Secret\Generate::class,
+            'pop:secret'        =>  \CBM\Core\Console\Commands\Secret\Pop::class,
         ];
     }
 
