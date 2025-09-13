@@ -35,5 +35,8 @@ class Generate Extends Command
         if(!Config::has('secret')) Config::create('secret', ['key'=>bin2hex(random_bytes($byte))]);
         // Create Secret Key Value
         Config::set('secret', 'key', bin2hex(random_bytes($byte)));
+        // Set Message
+        $this->info("Secret Key Generated Successfully");
+        return;
     }
 }

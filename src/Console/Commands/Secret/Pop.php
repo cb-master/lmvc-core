@@ -28,5 +28,8 @@ class Pop Extends Command
         if(!Config::has('secret')) Config::create('secret', []);
         // Create Secret Key Value
         Config::set('secret', 'key', '');
+        // Set Message
+        $this->info("Secret Key Removed Successfully");
+        return;
     }
 }
