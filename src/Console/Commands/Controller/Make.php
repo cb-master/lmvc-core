@@ -124,9 +124,9 @@ class Make Extends Command
                 $this->error("Failed to Create View: {$view}");
                 return;
             }
-        }        
-        
+        }
         
         $this->info("Controller Created Successfully: '{$params[0]}' With View: '{$view}'");
+        return;
     }
 }

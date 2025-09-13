@@ -60,8 +60,10 @@ class Config
         $obj = self::load();
         $name = strtolower($name);
 
-        if($key !== null) return $obj->config[$name][$key] ?? $default;
+        $result[$name] = '';
 
+        // Get Value
+        if($key !== null) return $obj->config[$name][$key] ?? $default;
         return $obj->config[$name] ?? $default;
     }
 
