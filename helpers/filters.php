@@ -10,8 +10,15 @@
 
 declare(strict_types=1);
 
+// Deny Direct Access
+defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!');
+
 // Load View
-add_filter('load_view', function(string $view){ return trim($view); });
+add_filter('load_view', function(string $view){
+    $view = trim($view, '/');
+    $viewFile = BASE_PATH . "/app/Views/{$view}.tpl.php";
+    return $viewFile;
+});
 
 // Load Style
 add_filter('load_style', function(string $style){ return trim($style); });

@@ -10,8 +10,10 @@
 
 declare(strict_types=1);
 
-use CBM\Core\Filter;
-use CBM\Core\Uri;
+// Deny Direct Access
+defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!');
+
+use CBM\Core\{Filter, Uri, Option};
  
 // Dump Data & Die
 /**
@@ -82,4 +84,14 @@ function add_filter(string $filter, callable $callback, int $priority = 10): voi
 function apply_filter(string $filter, mixed $value = null, mixed ...$args): mixed
 {
     return Filter::apply_filter($filter, $value, ...$args);
+}
+
+// Get option Value
+/**
+ * @param string $key Required Argument. Options Key Name
+ * @return ?string
+*/
+function option(string $key): ?string
+{
+    return Option::get($key);
 }

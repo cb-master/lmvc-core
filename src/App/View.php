@@ -24,13 +24,12 @@ Class View
      */
     public static function render(string $view, array $data = [])
     {
-        $view = trim($view, '/');
-        $viewFile = BASE_PATH . "/app/Views/{$view}.tpl.php";
+        $viewFile = apply_filter('load_view', $view);
 
         if (!file_exists($viewFile)) throw new \Exception("View file not found: {$viewFile}");
 
         if ($data) extract($data, EXTR_SKIP);
 
-        require BASE_PATH . "/app/Views/{$view}.tpl.php";
+        require $viewFile;
     }
 }

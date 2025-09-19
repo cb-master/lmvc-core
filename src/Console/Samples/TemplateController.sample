@@ -19,7 +19,10 @@ use CBM\Core\{App\Controller, Template};
 
 class {{NAME}} Extends Controller
 {
-    public function index()
+    /**
+    * Args contains Request Object and Other Route Parameters
+    */
+    public function index(array $args)
     {
         /**
          * Using Template Engine Compile View File
@@ -29,6 +32,7 @@ class {{NAME}} Extends Controller
 
         // Assign Data
         $tpl->assign('title', 'Home');
+        $this->assign($args);
 
         // Load View File
         $tpl->render('{{VIEW}}');

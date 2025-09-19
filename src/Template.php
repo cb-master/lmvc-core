@@ -78,7 +78,7 @@ class Template
     public function assign(string|array $key, mixed $value = null): void
     {
         if(is_array($key)){
-            $this->vars = array_merge($this->vars, $key);
+            $this->vars = array_merge($key, $this->vars);
         }else{
             $this->vars[$key] = $value;
         }

@@ -19,11 +19,20 @@ defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!')
 Class Controller
 {
     // Template Directory
-    protected ?string $templatedirectory;
+    private ?string $templatedirectory;
 
     public function __construct(string $template_directory = '')
     {
         $this->templatedirectory = trim($template_directory, '/');
+    }
+
+    // Set Template Sub Directory
+    /**
+     * @param string $directory Sub Directory inside Views Directory
+     */
+    public function templateSubDirectory(string $directory): void
+    {
+        $this->templatedirectory .= '/'.trim($directory, '/');
     }
 
     // View Controller
