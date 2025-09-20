@@ -14,9 +14,9 @@ namespace CBM\Core\App;
 
 defined('BASE_PATH') || http_response_code(403) . die('403 Direct Access Denied!');
 
-use CBM\Core\Uri;
 use CBM\Core\Http\Request;
-use ReflectionMethod;
+use CBM\Core\Uri;
+use Exception;
 
 class Router
 {
@@ -283,7 +283,7 @@ class Router
     {
         if (!class_exists($controller)) {
             http_response_code(500);
-            echo "Controller {$controller} not found";
+            throw new Exception("Controller class {$controller} does not exist");
             return;
         }
 
