@@ -34,14 +34,14 @@ class Option
      * @param string $name - Required Argument as Option Key.
      * @return string
      */
-    public static function get(string $name): string
+    public static function get(string $name): ?string
     {
         try{
             $db = DB::getInstance();
             $option = $db->table(self::$table)->where(self::$key, '=', $name)->first(self::$value);
-            return $option[self::$value] ?? '';
+            return $option[self::$value] ?? null;
         }catch(\Throwable $th){}
-        return '';
+        return null;
     }
 
     // Set Option
