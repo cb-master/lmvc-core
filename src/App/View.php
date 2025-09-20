@@ -19,17 +19,16 @@ defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!')
 Class View
 {
     /**
-     * @param string $view View File Name. Example 'index' Where index Represents index.php in app/views directory
+     * @param string $viewFile View File. Example 'index' Where index Represents index.php in app/views directory
      * @param array $data Data to Extract in View File
      */
-    public static function render(string $view, array $data = [])
+    public static function render(string $viewFile, array $data = []): void
     {
-        $viewFile = apply_filter('load_view', $view);
+        if(!file_exists($viewFile)) throw new \Exception("View file not found: {$viewFile}");
 
-        if (!file_exists($viewFile)) throw new \Exception("View file not found: {$viewFile}");
-
-        if ($data) extract($data, EXTR_SKIP);
+        if($data) extract($data, EXTR_SKIP);
 
         require $viewFile;
+        return;
     }
 }

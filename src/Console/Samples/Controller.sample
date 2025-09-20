@@ -25,9 +25,17 @@ class {{NAME}} Extends Controller
     */
     public function index(array $args)
     {
-        // Set Data
-        $data = ['title'=>'Page Title'];
+        // Args contains Request Object and other route parameters
+        /**
+         * Using Without Template Engine Compile View File
+         */
+        // Assign Data
+        $this->assign('title', 'Home');
+
+        // Assign Default Args
+        $this->assign($args);
+        
         // load View File
-        $this->view('{{VIEW}}', array_merge($args, $data));
+        $this->view('{{VIEW}}');
     }
 }

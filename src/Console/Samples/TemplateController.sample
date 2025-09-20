@@ -32,9 +32,11 @@ class {{NAME}} Extends Controller
 
         // Assign Data
         $tpl->assign('title', 'Home');
+        
+        // Assign Default Args
         $this->assign($args);
 
         // Load View File
-        $tpl->render('{{VIEW}}');
+        $tpl->view('{{VIEW}}');
     }
 }

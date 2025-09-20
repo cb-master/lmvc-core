@@ -57,22 +57,18 @@ class Template
 
     public function addTemplateDir(string $directory): void
     {
-        $directory = rtrim($directory, '/');
+        $directory = trim(strtolower($directory), '/');
+        $this->templateDir .= "/{$directory}";
         
-        if (!is_dir($directory) && !mkdir($directory, 0777, true) && !is_dir($directory)) {
-            throw new \RuntimeException("Failed to Create Template Directory: {$directory}");
-        }
-        $this->templateDir = rtrim($directory, '/');
+        if(!Directory::make($this->templateDir)) throw new RuntimeException("Failed to Create Template Directory: {$directory}");
     }
 
     public function addCacheDir(string $directory): void
     {
-        $directory = rtrim($directory, '/');
+        $directory = trim(strtolower($directory), '/');
+        $this->cacheDir .= "/{$directory}";
         
-        if (!is_dir($directory) && !mkdir($directory, 0777, true) && !is_dir($directory)) {
-            throw new \RuntimeException("Failed to Create Cache Directory: {$directory}");
-        }
-        $this->cacheDir = $directory;
+        if(!Directory::make($this->cacheDir)) throw new RuntimeException("Failed to Create Template Directory: {$directory}");
     }
 
     public function assign(string|array $key, mixed $value = null): void
@@ -91,7 +87,7 @@ class Template
     }
 
     /** Render a template file */
-    public function render(string $view): void
+    public function view(string $view): void
     {
         // Create Template Directory htaccess if Not Available
         if(!is_file("{$this->templateDir}/.htaccess")) file_put_contents("{$this->templateDir}/.htaccess", "Deny from all");
