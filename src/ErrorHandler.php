@@ -16,6 +16,7 @@ namespace CBM\Core;
 // Deny Direct Access
 defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
+use CBM\Core\Http\Response;
 use ErrorException;
 use PDOException;
 use Throwable;
@@ -71,8 +72,9 @@ class ErrorHandler
     public static function handleException(Throwable $exception):void
     {
         if (self::$hasOutput) {
+            Response::code(500);
             // Already output error, just exit
-            exit;
+            return;
         }
         self::$hasOutput = true;
 
@@ -85,15 +87,16 @@ class ErrorHandler
             self::internalErrorHtml();
         }
 
-        exit;
+        return;
     }
 
     // Handle Shutdown
     public static function handleShutdown():void
     {
         if (self::$hasOutput) {
+            Response::code(500);
             // Already output error, just exit
-            exit;
+            return;
         }
 
         $error = error_get_last();
@@ -104,12 +107,13 @@ class ErrorHandler
         }
 
         if (!empty(self::$exceptions)) {
+            // Response::code(500);
             if (self::$debug) {
                 self::errorHtml();
             } else {
                 self::internalErrorHtml();
             }
-            exit;
+            return;
         }
     }
 
