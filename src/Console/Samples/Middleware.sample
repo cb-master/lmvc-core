@@ -18,7 +18,7 @@ defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!')
 
 class {{NAME}}
 {
-    public function handle(...$args)
+    public function handle(array $args)
     {
         //
     }
