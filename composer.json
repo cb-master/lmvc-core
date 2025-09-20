@@ -22,11 +22,11 @@
             "email": "riyadhtayf@gmail.com"
         }
     ],
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "require": {
-        "cb-master/cbm-model": "^1",
-        "cb-master/php-session-handler": "^1",
-        "firebase/php-jwt": "^6",
+        "cb-master/cbm-model": "dev-main",
+        "cb-master/php-session-handler": "dev-main",
+        "firebase/php-jwt": "dev-main",
         "php": ">=8.1"
     }
 }
