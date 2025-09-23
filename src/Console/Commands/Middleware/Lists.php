@@ -13,14 +13,16 @@ declare(strict_types=1);
 // Namespace
 namespace CBM\Core\Console\Commands\Middleware;
 
-use CBM\Core\{Console\Command, Directory};
+// Deny Direct Access
+defined('APP_PATH') || http_response_code(403) . die('403 Direct Access Denied!');
 
+use CBM\Core\{Console\Command, Directory};
 
 // Make Middleware Class
 class Lists Extends Command
 {
     // App Middleware Path
-    protected string $path = BASE_PATH . '/app/Middleware';
+    protected string $path = APP_PATH . '/lf-app/Middleware';
 
     // Accepted Regular Expresion
     private string $exp = '/^[a-zA-Z_\/]+$/';
@@ -65,7 +67,7 @@ class Lists Extends Command
         foreach($paths as $path){
             if(is_file($path)){
                 $total++;
-                echo "\t>> ".'CBM\\App\\Middleware\\'.str_replace([BASE_PATH . '/app/Middleware/', '.php','/'], ['','','\\'], $path)."\n";
+                echo "\t>> ".'CBM\\App\\Middleware\\'.str_replace(["{$this->path}/", '.php','/'], ['','','\\'], $path)."\n";
             }
         }
         echo <<<TOTAL

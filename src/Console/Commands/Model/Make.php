@@ -13,12 +13,15 @@ declare(strict_types=1);
 // Namespace
 namespace CBM\Core\Console\Commands\Model;
 
+// Deny Direct Access
+defined('APP_PATH') || http_response_code(403) . die('403 Direct Access Denied!');
+
 use CBM\Core\{Console\Command,Directory};
 
 class Make Extends Command
 {
     // App Model Path
-    protected string $path = BASE_PATH . '/app/Model';
+    protected string $path = APP_PATH . '/lf-app/Model';
 
     // Accepted Regular Expresion
     private string $exp = '/^[a-zA-Z_\/]+$/';

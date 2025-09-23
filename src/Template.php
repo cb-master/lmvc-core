@@ -12,12 +12,15 @@ declare(strict_types=1);
 
 namespace CBM\Core;
 
+// Deny Direct Access
+defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
+
 use RuntimeException;
 
 class Template
 {
-    protected string $templateDir = BASE_PATH . '/app/Views';
-    protected string $cacheDir = BASE_PATH . '/cache';
+    protected string $templateDir = APP_PATH . '/lf-templates';
+    protected string $cacheDir = APP_PATH . '/lf-cache';
 
     /** Variables available to templates */
     protected array $vars = [];
@@ -89,6 +92,8 @@ class Template
     /** Render a template file */
     public function view(string $view): void
     {
+        // Add Default Config Data
+        $this->vars['app_info'] = Config::get('app');
         // Create Template Directory htaccess if Not Available
         if(!is_file("{$this->templateDir}/.htaccess")) file_put_contents("{$this->templateDir}/.htaccess", "Deny from all");
         if(!is_file("{$this->templateDir}/nginx.conf")) file_put_contents("{$this->templateDir}/nginx.conf", "deny all");
@@ -106,7 +111,7 @@ class Template
         // Remove PHP Scripts if Exist
         $source = preg_replace('/<\?(php)?[\s\S]*?\?>/i', '', $source);
         $source = preg_replace('/<\?(=)?[\s\S]*?\?>/i', '', $source);
-        $source = "<?php\n// Deny Direct Access\ndefined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!');\n?>{$source}";
+        $source = "<?php\n// Deny Direct Access\ndefined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');\n?>{$source}";
 
         [$parent, $deps] = $this->collectDependencies($source);
 
@@ -224,13 +229,14 @@ class Template
      */
     protected function compileTemplate(string $content, bool $isChild): string
     {
+        // if ($isChild) {
+        //     $content = preg_replace('/\{\%\s*extends\s+[\'\"](.+?)[\'\"]\s*\%\}/', '', $content);
+        // }
+        
         // Remove the {% extends %} directive from child files during compilation
-        if ($isChild) {
-            $content = preg_replace('/\{\%\s*extends\s+[\'\"](.+?)[\'\"]\s*\%\}/', '', $content);
-        }
-
         // Child blocks: capture content for later merging in parent
         if ($isChild) {
+            $content = preg_replace('/\{\%\s*extends\s+[\'\"](.+?)[\'\"]\s*\%\}/', '', $content);
             $content = preg_replace_callback('/\{\%\s*block\s+(\w+)(?:\s+(append|prepend))?\s*\%\}/',
                 function ($m) {
                     $name = $m[1];
@@ -263,6 +269,13 @@ class Template
             $includeFile = $this->templateDir . $matches[1];
             return is_file($includeFile) ? file_get_contents($includeFile) : '';
         }, $content);
+
+        // Global apply_filter function
+        $content = preg_replace_callback(
+            '/\{\{\s*apply_filter\((.+?)\)\s*\}\}/',
+            fn($m) => "<?= apply_filter({$m[1]}) ?>",
+            $content
+        );
 
         // Variables with filters and optional arguments: {{ var | filter(arg1, 'str') | upper }}
         $content = preg_replace_callback('/\{\{\s*(.+?)\s*\}\}/', function ($matches) {

@@ -13,16 +13,19 @@ declare(strict_types=1);
 // Namespace
 namespace CBM\Core\Console\Commands\Controller;
 
+// Deny Direct Access
+defined('APP_PATH') || http_response_code(403) . die('403 Direct Access Denied!');
+
 use CBM\Core\{Console\Command, Directory};
 
 // Rename Controller Class
 class Rename Extends Command
 {
     // App Controller Old Path
-    protected string $old_path = BASE_PATH . '/app/Controller';
+    protected string $old_path = APP_PATH . '/lf-app/Controller';
     
     // App Controller New Path
-    protected string $new_path = BASE_PATH . '/app/Controller';
+    protected string $new_path = APP_PATH . '/lf-app/Controller';
 
     // Accepted Regular Expresion
     private string $exp = '/^[a-zA-Z_\/]+$/';

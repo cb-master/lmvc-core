@@ -13,6 +13,9 @@ declare(strict_types=1);
 // Namespace
 namespace CBM\Core\Console\Commands\Secret;
 
+// Deny Direct Access
+defined('APP_PATH') || http_response_code(403) . die('403 Direct Access Denied!');
+
 use CBM\Core\{Console\Command,Config};
 
 class Generate Extends Command

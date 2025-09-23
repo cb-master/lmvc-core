@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace CBM\Core\Http;
 
-defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!');
+defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
 use CBM\Core\Config;
 
@@ -22,13 +22,13 @@ class Response
      * Default Headers
      */
     private static array $headers = [
-        "Access-Control-Allow-Origin"       => "*",
-        "Access-Control-Allow-Methods"      => "GET, POST",
-        "Access-Control-Allow-Headers"      => "Authorization, Origin, X-Requested-With, Content-Type, Accept",
-        "Access-Control-Allow-Credentials"  => "true",
-        "X-Powered-By"                       => "Laika",
-        "X-Frame-Options"                    => "sameorigin",
-        "Content-Security-Policy"            => "frame-ancestors 'self'",
+        "Access-Control-Allow-Origin"       =>  "*",
+        "Access-Control-Allow-Methods"      =>  "GET, POST",
+        "Access-Control-Allow-Headers"      =>  "Authorization, Origin, X-Requested-With, Content-Type, Accept",
+        "Access-Control-Allow-Credentials"  =>  "true",
+        "X-Powered-By"                      =>  "Laika",
+        "X-Frame-Options"                   =>  "sameorigin",
+        "Content-Security-Policy"           =>  "frame-ancestors 'self'",
     ];
 
     /**

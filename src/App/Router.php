@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace CBM\Core\App;
 
-defined('BASE_PATH') || http_response_code(403) . die('403 Direct Access Denied!');
+defined('APP_PATH') || http_response_code(403) . die('403 Direct Access Denied!');
 
 use CBM\Core\Http\Request;
 use CBM\Core\Uri;
@@ -25,6 +25,9 @@ class Router
     protected string $group = '';
     protected array $middlewares = [];
     protected array $globalMiddlewares = [];
+    protected $fallback = null;
+    protected array $groupFallbacks = [];
+    protected ?array $lastRoute = null; // [method, uri]
 
     private function __construct(){} // Prevent Object Creation
     public function __clone(){}     // Prevent Cloning
@@ -53,6 +56,9 @@ class Router
         $previousGroup = self::instance()->group;
         $previousMiddlewares = self::instance()->middlewares;
 
+        // Normalize prefix
+        $prefix = '/' . trim($prefix, '/');
+
         self::instance()->group = $previousGroup . $prefix;
         self::instance()->middlewares = array_merge(self::instance()->middlewares, $middlewares);
 
@@ -73,23 +79,35 @@ class Router
     {
         // Wrap single item into an array
         if(!is_array($middlewares)) $middlewares = [$middlewares];
+        
+        // // Target the last registered route
+        // $lastMethod = array_key_last(self::instance()->routes);
+        // if ($lastMethod !== null) {
+        //     $lastRoute = array_key_last(self::instance()->routes[$lastMethod]);
+        //     if ($lastRoute !== null) {
+        //         // Append to this specific route's middlewares
+        //         self::instance()->routes[$lastMethod][$lastRoute]['middlewares'] = array_merge(
+        //             self::instance()->routes[$lastMethod][$lastRoute]['middlewares'] ?? [],
+        //             $middlewares
+        //         );
+        //         return self::$instance;
+        //     }
+        // }
 
-        // Target the last registered route
-        $lastMethod = array_key_last(self::instance()->routes);
-        if ($lastMethod !== null) {
-            $lastRoute = array_key_last(self::instance()->routes[$lastMethod]);
-            if ($lastRoute !== null) {
-                // Append to this specific route's middlewares
-                self::instance()->routes[$lastMethod][$lastRoute]['middlewares'] = array_merge(
-                    self::instance()->routes[$lastMethod][$lastRoute]['middlewares'] ?? [],
-                    $middlewares
-                );
-                return self::$instance;
-            }
+        // // Fallback: treat as global middleware
+        // self::instance()->middlewares = array_merge(self::instance()->middlewares, $middlewares);
+        // return self::$instance;
+        if (self::instance()->lastRoute) {
+            [$lastMethod, $lastKey] = self::instance()->lastRoute;
+            self::instance()->routes[$lastMethod][$lastKey]['middlewares'] = array_merge(
+                self::instance()->routes[$lastMethod][$lastKey]['middlewares'] ?? [],
+                $middlewares
+            );
+        } else {
+            // fallback: global
+            self::instance()->middlewares = array_merge(self::instance()->middlewares, $middlewares);
         }
 
-        // Fallback: treat as global middleware
-        self::instance()->middlewares = array_merge(self::instance()->middlewares, $middlewares);
         return self::$instance;
     }
 
@@ -181,19 +199,130 @@ class Router
         self::instance()->globalMiddlewares[] = $middleware;
     }
 
-    // Dispatch the URI & Request
+    // Set 404 fallback
+    /**
+     * @param callable|array|string $callback The handler for 404 (callable, 'Controller@method', or [Controller, method])
+     */
+    public static function fallback(callable|array|string $callback): void
+    {
+        self::instance()->fallback = $callback;
+        return;
+    }
+
+    // Set group 404 fallback
+    /**
+     * @param string $prefix The group prefix
+     * @param callable|array|string $callback The handler for 404 (callable, 'Controller@method', or [Controller, method])
+     */
+    public static function groupFallback(string $prefix, callable|array|string $callback): void
+    {
+        $prefix = '/' . trim($prefix, '/');
+        self::instance()->groupFallbacks[$prefix] = $callback;
+        return;
+    }
+
+    // // Dispatch the URI & Request
+    // public static function dispatch(): void
+    // {
+    //     // Get Request Method
+    //     $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+    //     // Get Instance
+    //     $routes = self::instance();
+
+    //     // Get Request Path
+    //     $path   = $routes->normalize('/' . Uri::path());
+
+    //     // Request Object
+    //     $request = new Request();
+
+    //     foreach ($routes->routes[$method] ?? [] as $route => $data) {
+    //         $pattern = preg_replace('/\{[a-zA-Z_][a-zA-Z0-9_]*\}/', '([a-zA-Z0-9-_]+)', $route);
+    //         $pattern = "#^{$pattern}$#";
+
+    //         if (preg_match($pattern, $path, $matches)) {
+    //             array_shift($matches);
+
+    //             $args['params'] = $matches;
+    //             $args['request'] = $request;
+
+    //             // Run global + route middlewares
+    //             foreach (array_merge($routes->globalMiddlewares, $data['middlewares']) as $middleware) {
+    //                 if (!$routes->runMiddleware($middleware, $args)) {
+    //                     return; // Stop if middleware blocks request
+    //                 }
+    //             }
+
+    //             $callback = $data['handler'];
+
+    //             // Handle "Controller@method"
+    //             if (is_string($callback)) {
+    //                 [$controller, $methodName] = explode('@', $callback);
+    //                 $controller = "CBM\\App\\Controller\\{$controller}";
+    //                 $routes->invokeController($controller, $methodName, $matches, $request);
+    //                 return;
+    //             }
+
+    //             // Handle [Controller, method]
+    //             if (is_array($callback)) {
+    //                 [$controller, $methodName] = $callback;
+    //                 $controller = "CBM\\App\\Controller\\{$controller}";
+    //                 $routes->invokeController($controller, $methodName, $matches, $request);
+    //                 return;
+    //             }
+
+    //             // Handle closures/callables
+    //             if (is_callable($callback)) {
+    //                 call_user_func_array($callback, $matches);
+    //                 return;
+    //             }
+    //         }
+    //     }
+
+    //     // No route matched
+    //     http_response_code(404);
+    //     // Check for group-specific fallback first
+    //     foreach ($routes->groupFallbacks as $prefix => $callback) {
+    //         if ($path === $prefix || str_starts_with($path, $prefix . '/')) {
+    //             $routes->runFallback($callback, $request);
+    //             return;
+    //         }
+    //     }
+
+    //     // Global fallback
+    //     if ($routes->fallback) {
+    //         $routes->runFallback($routes->fallback, $request);
+    //         return;
+    //     }
+    //     require_once __DIR__.'/404.php';
+    //     return;
+    // }
     public static function dispatch(): void
     {
         // Get Request Method
         $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+        // Get Instance
+        $routes = self::instance();
+
         // Get Request Path
-        $path   = self::instance()->normalize('/' . Uri::path());
+        $path   = $routes->normalize('/' . Uri::path());
 
         // Request Object
         $request = new Request();
 
-        foreach (self::instance()->routes[$method] ?? [] as $route => $data) {
-            $pattern = preg_replace('/\{[a-zA-Z_][a-zA-Z0-9_]*\}/', '([a-zA-Z0-9-_]+)', $route);
+        foreach ($routes->routes[$method] ?? [] as $route => $data) {
+            // Allow {param} and {param:regex}
+            $pattern = preg_replace_callback(
+                '/\{([a-zA-Z_][a-zA-Z0-9_]*)(:([^}]+))?\}/',
+                function ($matches) {
+                    // {param:regex}
+                    if (!empty($matches[3])) {
+                        return '(' . $matches[3] . ')';
+                    }
+                    // {param} default
+                    return '([a-zA-Z0-9-_]+)';
+                },
+                $route
+            );
             $pattern = "#^{$pattern}$#";
 
             if (preg_match($pattern, $path, $matches)) {
@@ -203,19 +332,19 @@ class Router
                 $args['request'] = $request;
 
                 // Run global + route middlewares
-                foreach (array_merge(self::instance()->globalMiddlewares, $data['middlewares']) as $middleware) {
-                    if (!self::instance()->runMiddleware($middleware, $args)) {
+                foreach (array_merge($routes->globalMiddlewares, $data['middlewares']) as $middleware) {
+                    if (!$routes->runMiddleware($middleware, $args)) {
                         return; // Stop if middleware blocks request
                     }
                 }
-
+// show(self::instance()->routes);
                 $callback = $data['handler'];
 
                 // Handle "Controller@method"
                 if (is_string($callback)) {
                     [$controller, $methodName] = explode('@', $callback);
                     $controller = "CBM\\App\\Controller\\{$controller}";
-                    self::instance()->invokeController($controller, $methodName, $matches, $request);
+                    $routes->invokeController($controller, $methodName, $matches, $request);
                     return;
                 }
 
@@ -223,7 +352,7 @@ class Router
                 if (is_array($callback)) {
                     [$controller, $methodName] = $callback;
                     $controller = "CBM\\App\\Controller\\{$controller}";
-                    self::instance()->invokeController($controller, $methodName, $matches, $request);
+                    $routes->invokeController($controller, $methodName, $matches, $request);
                     return;
                 }
 
@@ -235,8 +364,23 @@ class Router
             }
         }
 
+        // No route matched
         http_response_code(404);
-        echo "404 - Not Found";
+        // Check for group-specific fallback first
+        foreach ($routes->groupFallbacks as $prefix => $callback) {
+            if ($path === $prefix || str_starts_with($path, $prefix . '/')) {
+                $routes->runFallback($callback, $request);
+                return;
+            }
+        }
+
+        // Global fallback
+        if ($routes->fallback) {
+            $routes->runFallback($routes->fallback, $request);
+            return;
+        }
+        require_once __DIR__.'/404.php';
+        return;
     }
 
     #####################################################################################################
@@ -253,12 +397,24 @@ class Router
      */
     private function addRoute(string $method, string $uri, callable|array|string $callback, array $middlewares = []): void
     {
-        $uri = '/'.trim($uri,'/');
+        $method = strtoupper($method);
+        $uri = '/' . trim($uri, '/');
         $fullUri = self::instance()->group . $uri;
-        self::instance()->routes[strtoupper($method)][self::instance()->normalize($fullUri)] = [
+        $key = self::instance()->normalize($fullUri);
+
+        self::instance()->routes[$method][$key] = [
             'handler'     => $callback,
             'middlewares' => array_merge(self::instance()->middlewares, $middlewares),
         ];
+
+        // 👇 Remember last route for chaining
+        self::instance()->lastRoute = [$method, $key];
+        // $uri = '/'.trim($uri,'/');
+        // $fullUri = self::instance()->group . $uri;
+        // self::instance()->routes[strtoupper($method)][self::instance()->normalize($fullUri)] = [
+        //     'handler'     => $callback,
+        //     'middlewares' => array_merge(self::instance()->middlewares, $middlewares),
+        // ];
     }
 
     // Normalize URI by removing trailing slashes
@@ -325,5 +481,33 @@ class Router
         }
 
         return true; // If middleware not found, allow request
+    }
+
+    // Run fallback handler
+    /**
+     * @param callable|array|string $callback The handler for 404 (callable, 'Controller@method', or [Controller, method])
+     * @param Request $request The current HTTP request
+     * @return void
+     */
+    private function runFallback(callable|array|string $callback, Request $request): void
+    {
+        if (is_string($callback)) {
+            [$controller, $methodName] = explode('@', $callback);
+            $controller = "CBM\\App\\Controller\\{$controller}";
+            $this->invokeController($controller, $methodName, [], $request);
+            return;
+        }
+
+        if (is_array($callback)) {
+            [$controller, $methodName] = $callback;
+            $controller = "CBM\\App\\Controller\\{$controller}";
+            $this->invokeController($controller, $methodName, [], $request);
+            return;
+        }
+
+        if (is_callable($callback)) {
+            call_user_func($callback, $request);
+            return;
+        }
     }
 }

@@ -13,16 +13,19 @@ declare(strict_types=1);
 // Namespace
 namespace CBM\Core\Console\Commands\Model;
 
+// Deny Direct Access
+defined('APP_PATH') || http_response_code(403) . die('403 Direct Access Denied!');
+
 use CBM\Core\{Console\Command, Directory};
 
 // Rename Model Class
 class Rename Extends Command
 {
     // App Model Old Path
-    protected string $old_path = BASE_PATH . '/app/Model';
+    protected string $old_path = APP_PATH . '/lf-app/Model';
     
     // App Model New Path
-    protected string $new_path = BASE_PATH . '/app/Model';
+    protected string $new_path = APP_PATH . '/lf-app/Model';
 
     // Accepted Regular Expresion
     private string $exp = '/^[a-zA-Z_\/]+$/';

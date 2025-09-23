@@ -9,7 +9,8 @@ declare(strict_types=1);
 
 namespace CBM\Core\Storage;
 
-use RuntimeException;
+// Deny Direct Access
+defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
 /**
  * JSON Storage
@@ -24,7 +25,7 @@ class JsonStorage
     /**
      * @var string
      */
-    protected string $path = BASE_PATH . '/storage';
+    protected string $path = APP_PATH . '/../lf-storage';
 
     private function __construct(){}
 

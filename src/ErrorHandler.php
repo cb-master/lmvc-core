@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace CBM\Core;
 
 // Deny Direct Access
-defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!');
+defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
 use CBM\Core\Http\Response;
 use ErrorException;
@@ -120,10 +120,9 @@ class ErrorHandler
     // Log Errors in Log File
     protected static function logError(Throwable $exception): void
     {
-        $logDir = BASE_PATH . '/logs';
-        if (!is_dir($logDir)) {
-            mkdir($logDir, 0775, true);
-        }
+        $logDir = APP_PATH . '/lf-logs';
+        // Create Directory If Not Exists
+        Directory::make($logDir);
 
         $logFile = $logDir . '/error-' . time() . '.log';
 

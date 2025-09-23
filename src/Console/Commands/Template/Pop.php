@@ -13,13 +13,16 @@ declare(strict_types=1);
 // Namespace
 namespace CBM\Core\Console\Commands\Template;
 
+// Deny Direct Access
+defined('APP_PATH') || http_response_code(403) . die('403 Direct Access Denied!');
+
 use CBM\Core\{Console\Command};
 
 // Remove Template File
 class Pop Extends Command
 {
     // App Template Path
-    protected string $path = BASE_PATH . '/app/Views';
+    protected string $path = APP_PATH . '/lf-templates';
 
     // Accepted Regular Expresion
     private string $exp = '/^[a-zA-Z0-9_\-\/]+$/';

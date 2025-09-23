@@ -14,15 +14,15 @@ declare(strict_types=1);
 namespace CBM\Core\App;
 
 // Deny Direct Access
-defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!');
+defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
-use CBM\Core\Directory;
+use CBM\Core\{Directory, Config};
 use RuntimeException;
 
 Class Controller
 {
     // Template Directory
-    private string $templateDirectory = BASE_PATH . "/app/Views";
+    private string $templateDirectory = APP_PATH . "/lf-templates";
 
     /** Variables available to templates */
     protected array $vars = [];
@@ -67,6 +67,8 @@ Class Controller
      */
     protected function view(string $view): void
     {
+        // Add Default Config Data
+        $this->vars['app_info'] = Config::get('app');
         // Require All Template Helpers
         $helpersPath = $this->templateDirectory . '/helpers';
         if(Directory::exists($helpersPath)){
@@ -82,6 +84,8 @@ Class Controller
 
         $view = trim($view, '/');
         $viewFile = "{$this->templateDirectory}/{$view}.tpl.php";
+        
+        // Load Template Content
         View::render($viewFile, $this->vars);
         return;
     }
