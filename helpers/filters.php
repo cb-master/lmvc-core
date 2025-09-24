@@ -18,16 +18,14 @@ use CBM\Core\Uri;
 // App Uri
 add_filter('app_uri', function(): string { return option('app_host') ?: Uri::base(); });
 
-// Template Asset Path
+// Asset Path
 /**
  * @param string $path. Example 'css/style.css'
  * @param bool $in_template - If true, it will look for the asset in the lf-templates folder. Default is false.
  * @return string
  */
 // Load Asset
-add_filter('load_asset', function(string $path, bool $in_template = false): string {
-    $path = trim($path, '/');
-    if($in_template) $path = "lf-templates/{$path}";
-    $path = preg_replace('/asset[s]*/i', 'resource', $path);
-    return apply_filter('app_uri') . "assets/{$path}";
+add_filter('load_asset', function(string $file): string {
+    $file = trim($file, '/');
+    return apply_filter('app_uri') . "resource/{$file}";
 });
