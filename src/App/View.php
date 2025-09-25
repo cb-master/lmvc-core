@@ -14,13 +14,15 @@ declare(strict_types=1);
 namespace CBM\Core\App;
 
 // Deny Direct Access
-defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!');
+defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
 Class View
 {
     /**
      * @param string $viewFile View File. Example 'index' Where index Represents index.php in app/views directory
      * @param array $data Data to Extract in View File
+     * @return void
+     * @throws \Exception If View File Not Found
      */
     public static function render(string $viewFile, array $data = []): void
     {

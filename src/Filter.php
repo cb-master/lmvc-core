@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace CBM\Core;
 
 // Deny Direct Access
-defined('BASE_PATH') || http_response_code(403) . die('403 Direct Access Denied!');
+defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
 use Exception;
 
@@ -68,7 +68,7 @@ class Filter
      * @param string $key   Asset name.
      * @param mixed  $value Value to store.
      */
-    public static function assign(string $key, mixed $value): void
+    public static function assignAsset(string $key, mixed $value): void
     {
         self::$assets[$key][] = $value;
     }
@@ -81,7 +81,7 @@ class Filter
      * @return array<mixed>
      * @throws Exception If the asset key doesn't exist.
      */
-    public static function getAssignedFilter(string $key): array
+    public static function getAssignedAssets(string $key): array
     {
         if (!isset(self::$assets[$key])) {
             throw new Exception("Assigned Filter '{$key}' Does Not Exist!", 80000);

@@ -13,6 +13,9 @@ declare(strict_types=1);
 // Namespace
 namespace CBM\Core\Console\Commands;
 
+// Deny Direct Access
+defined('APP_PATH') || http_response_code(403) . die('403 Direct Access Denied!');
+
 use CBM\Core\{Console\Command, Config};
 use CBM\Model\ConnectionManager;
 use CBM\Model\{Schema,DB};
@@ -29,7 +32,7 @@ class Migrate Extends Command
             'dateformat'    =>  'Y-M-d H:i:s',
             'dbsession'     =>  'yes',
             'developermode' =>  'yes',
-            'basepath'      =>  realpath(BASE_PATH ?? __DIR__.'/../../../../../../')
+            'basepath'      =>  APP_PATH ?? realpath(__DIR__.'/../../../../../../')
         ];
     }
 

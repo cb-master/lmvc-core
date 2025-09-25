@@ -14,9 +14,10 @@ declare(strict_types=1);
 namespace CBM\Core;
 
 // Deny Direct Access
-defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!');
+defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
 use CBM\Model\DB;
+use Throwable;
 
 class Option
 {
@@ -40,7 +41,7 @@ class Option
             $db = DB::getInstance();
             $option = $db->table(self::$table)->where(self::$key, '=', $name)->first(self::$value);
             return $option[self::$value] ?? null;
-        }catch(\Throwable $th){}
+        }catch(Throwable $th){}
         return null;
     }
 

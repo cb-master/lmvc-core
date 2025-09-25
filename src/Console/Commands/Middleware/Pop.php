@@ -13,13 +13,16 @@ declare(strict_types=1);
 // Namespace
 namespace CBM\Core\Console\Commands\Middleware;
 
+// Deny Direct Access
+defined('APP_PATH') || http_response_code(403) . die('403 Direct Access Denied!');
+
 use CBM\Core\Console\Command;
 
 // Remove Middleware Class
 class Pop Extends Command
 {
     // App Middleware Path
-    protected string $path = BASE_PATH . '/app/Middleware';
+    protected string $path = APP_PATH . '/lf-app/Middleware';
 
     /**
      * @param array $params

@@ -12,7 +12,7 @@ use CBM\Model\Model as BaseModel;
 use CBM\Core\Config;
 
 // Forbidden Access
-defined('BASE_PATH') || http_response_code(403).die('403 Forbidden Access!');
+defined('APP_PATH') || http_response_code(403).die('403 Forbidden Access!');
 
 class Model Extends BaseModel
 {

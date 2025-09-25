@@ -12,6 +12,9 @@ declare(strict_types=1);
 
 namespace CBM\Core;
 
+// Deny Direct Access
+defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
+
 use DateTimeImmutable;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;

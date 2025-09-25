@@ -13,14 +13,16 @@ declare(strict_types=1);
 // Namespace
 namespace CBM\Core\Console\Commands\Model;
 
-use CBM\Core\{Console\Command, Directory};
+// Deny Direct Access
+defined('APP_PATH') || http_response_code(403) . die('403 Direct Access Denied!');
 
+use CBM\Core\{Console\Command, Directory};
 
 // Make Model Class
 class Lists Extends Command
 {
     // App Model Path
-    protected string $path = BASE_PATH . '/app/Model';
+    protected string $path = APP_PATH . '/lf-app/Model';
 
     // Accepted Regular Expresion
     private string $exp = '/^[a-zA-Z_\/]+$/';
@@ -65,7 +67,7 @@ class Lists Extends Command
         foreach($paths as $path){
             if(is_file($path)){
                 $total++;
-                echo "\t>> ".'CBM\\App\\Model\\'.str_replace([BASE_PATH . '/app/Model/', '.php','/'], ['','','\\'], $path)."\n";
+                echo "\t>> ".'CBM\\App\\Model\\'.str_replace(["{$this->path}/", '.php','/'], ['','','\\'], $path)."\n";
             }
         }
         echo <<<TOTAL

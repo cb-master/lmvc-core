@@ -13,13 +13,16 @@ declare(strict_types=1);
 // Namespace
 namespace CBM\Core\Console\Commands\Controller;
 
+// Deny Direct Access
+defined('APP_PATH') || http_response_code(403) . die('403 Direct Access Denied!');
+
 use CBM\Core\Console\Command;
 
 // Remove Controller Class
 class Pop Extends Command
 {
     // App Controller Path
-    protected string $path = BASE_PATH . '/app/Controller';
+    protected string $path = APP_PATH . '/lf-app/Controller';
 
     // Accepted Regular Expresion
     private string $exp = '/^[a-zA-Z_\/]+$/';

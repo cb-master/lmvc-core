@@ -12,7 +12,8 @@ declare(strict_types=1);
 
 namespace CBM\Core;
 
-defined('BASE_PATH') || http_response_code(403) . die('403 Direct Access Denied!');
+// Deny Direct Access
+defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
 use CBM\Session\SessionManager;
 use CBM\Session\Session;

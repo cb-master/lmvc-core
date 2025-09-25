@@ -10,10 +10,8 @@ declare(strict_types=1);
 
 namespace CBM\Core;
 
-use InvalidArgumentException;
-use Exception;
-
-defined('BASE_PATH') || http_response_code(403) . die('403 Direct Access Denied!');
+// Deny Direct Access
+defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
 class Config
 {
@@ -30,7 +28,7 @@ class Config
     /**
      * @var string $path
      */
-    private string $path = BASE_PATH . '/config';
+    private string $path = APP_PATH . '/lf-config';
 
     // Create Object
     private function __construct() // Prevent External Instantiation
@@ -45,7 +43,7 @@ class Config
     }
 
     ######################################################################################
-    ## ------------------------------- USABLE METHODS --------------------------------- ##
+    ## --------------------------------- PUBLIC API ----------------------------------- ##
     ######################################################################################
 
     // Get Value From Config
@@ -215,10 +213,14 @@ class Config
         return "{$content}" . str_repeat(' ', $spaces) . "];";
     }
 
+    ##################################################################################
+    ## ----------------------------- PRIVATE API ---------------------------------- ##
+    ##################################################################################
+
     // Default Content
     private static function defaultContent(): string
     {
-        return "<?php\n/**\n* Laika PHP MVC Framework\n* Author: Showket Ahmed\n* Email: riyadhtayf@gmail.com\n* License: MIT\n* This file is part of the Laika PHP MVC Framework.\n* For the full copyright and license information, please view the LICENSE file that was distributed with this source code.\n*/\n\ndeclare(strict_types=1);\n\nreturn ";
+        return "<?php\n/**\n* Laika PHP MVC Framework\n* Author: Showket Ahmed\n* Email: riyadhtayf@gmail.com\n* License: MIT\n* This file is part of the Laika PHP MVC Framework.\n* For the full copyright and license information, please view the LICENSE file that was distributed with this source code.\n*/\n\ndeclare(strict_types=1);\n\n// Deny Direct Access\ndefined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');\n\nreturn ";
     }
 
     // Make Config File Contens

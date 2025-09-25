@@ -13,6 +13,9 @@ declare(strict_types=1);
 // Namespace
 namespace CBM\Core\Console\Commands;
 
+// Deny Direct Access
+defined('APP_PATH') || http_response_code(403) . die('403 Direct Access Denied!');
+
 use CBM\Core\Console\Command;
 
 class ListCommands Extends Command

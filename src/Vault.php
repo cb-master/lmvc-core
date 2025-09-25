@@ -13,7 +13,11 @@ declare(strict_types=1);
 // Namespace
 namespace CBM\Core;
 
+// Deny Direct Access
+defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
+
 use CBM\Core\Config;
+use RuntimeException;
 
 class Vault
 {
@@ -32,7 +36,7 @@ class Vault
     public function __construct()
     {
         if(!extension_loaded('openssl')){
-            throw new \RuntimeException("'openssl' Extension Not Found!");
+            throw new RuntimeException("'openssl' Extension Not Found!");
         }
 
         // Hash The Key for Consistency
@@ -67,7 +71,7 @@ class Vault
     {
         $data = base64_decode($encryptedBase64, true);
         if($data === false || strlen($data) <= ($this->ivLength + $this->tagLength)){
-            throw new \RuntimeException("Invalid Encrypted Data!");
+            throw new RuntimeException("Invalid Encrypted Data!");
         }
 
         $iv = substr($data, 0, $this->ivLength);

@@ -13,16 +13,19 @@ declare(strict_types=1);
 // Namespace
 namespace CBM\Core\Console\Commands\Middleware;
 
+// Deny Direct Access
+defined('APP_PATH') || http_response_code(403) . die('403 Direct Access Denied!');
+
 use CBM\Core\{Console\Command, Directory};
 
 // Rename Middleware Class
 class Rename Extends Command
 {
     // App Middleware Old Path
-    protected string $old_path = BASE_PATH . '/app/Middleware';
+    protected string $old_path = APP_PATH . '/lf-app/Middleware';
     
     // App Middleware New Path
-    protected string $new_path = BASE_PATH . '/app/Middleware';
+    protected string $new_path = APP_PATH . '/lf-app/Middleware';
 
     /**
      * @param array $params
