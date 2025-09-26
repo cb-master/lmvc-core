@@ -41,6 +41,7 @@ class Template
         if($templateDir) $this->templateDir .= '/'.trim(strtolower($templateDir), '/');
         if($cacheDir) $this->cacheDir .= '/'.trim(strtolower($cacheDir), '/');
         
+        // Make Directories if Does Not Exists
         if(!Directory::make($this->templateDir)) throw new RuntimeException("Failed to Create Template Directory: {$this->templateDir}");
         if(!Directory::make($this->cacheDir)) throw new RuntimeException("Failed to Create Template Directory: {$this->cacheDir}");
 

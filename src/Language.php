@@ -61,15 +61,18 @@ class Language
         // Set New Path if Argument is Not Blank or Null
         if($path){            
             $path = str_replace('\\', '/', $path);
-            self::$path = rtrim($path, '/');
+            self::$path .= '/'.trim($path, '/');
         }
-        // Check & Create Directory if Doesn't Exist.
-        if(!file_exists(self::$path) || !is_dir(self::$path)){
-            mkdir(self::$path);
-        }
+        // Make Directory If Doesn't Exists
+        Directory::make(self::$path);
+
         // Get File Name
-        $file = self::$path . '/' . self::get() . '.local.php';
-        if(!file_exists($file)){
+        $lang_path = self::$path . '/' . self::get() . '.local.php';
+
+        // Make Language File Object
+        $file = new File($lang_path);
+
+        if(!$file->exists()){
             $content = <<<HTML
             <?php
             /**
@@ -94,9 +97,9 @@ class Language
             HTML;
 
             // Create Language File
-            file_put_contents($file, $content);
+            $file->write($content);
         }
         // Return Language Path
-        return self::$path . '/' . self::get() . '.local.php';
+        return $lang_path;
     }
 }
