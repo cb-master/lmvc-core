@@ -271,8 +271,9 @@ class Router
             if (preg_match($pattern, $path, $matches)) {
                 array_shift($matches);
 
-                $args['params'] = $matches;
-                $args['request'] = $request;
+                $args['params'] =   $matches;
+                $args['request']=   $request;
+                $args['uri']    =   Uri::getInstance();
 
                 // Run global + route middlewares
                 foreach(array_merge($routes->globalMiddlewares, $data['middlewares']) as $middleware){
@@ -350,14 +351,8 @@ class Router
             'middlewares' => array_merge(self::instance()->middlewares, $middlewares),
         ];
 
-        // 👇 Remember last route for chaining
+        // Last Route for Chaining
         self::instance()->lastRoute = [$method, $key];
-        // $uri = '/'.trim($uri,'/');
-        // $fullUri = self::instance()->group . $uri;
-        // self::instance()->routes[strtoupper($method)][self::instance()->normalize($fullUri)] = [
-        //     'handler'     => $callback,
-        //     'middlewares' => array_merge(self::instance()->middlewares, $middlewares),
-        // ];
     }
 
     // Normalize URI by removing trailing slashes
@@ -386,8 +381,9 @@ class Router
             return;
         }
 
-        $args['params'] = $params;
-        $args['request'] = $request;
+        $args['params'] =   $params;
+        $args['request']=   $request;
+        $args['uri']    =   Uri::getInstance();
 
         call_user_func([new $controller, $methodName], $args);
         return;

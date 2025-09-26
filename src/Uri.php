@@ -36,8 +36,7 @@ class Uri
     // Script directory
     protected string $directory;
 
-    // Constructor
-    public function __construct()
+    private function __construct()
     {
         $this->scheme = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http';
         $this->host = $_SERVER['HTTP_HOST'] ?? 'localhost';
@@ -50,13 +49,18 @@ class Uri
         $this->baseUrl = $this->scheme . '://' . $this->host . $this->directory . '/';
     }
 
+    ##############################################################################
+    //------------------------------- PUBLIC API------------------------------- //
+    ##############################################################################
+
     // Get Instance
     /**
      * * @return self
      */
-    private static function instance():self
+    public static function getInstance():self
     {
-        return self::$instance ??= new self();
+        self::$instance ??= new self();
+        return self::$instance;
     }
 
     // Get Current URL
@@ -65,7 +69,7 @@ class Uri
      */
     public static function current():string
     {
-        return rtrim(self::instance()->scheme . '://' . self::instance()->host . ($_SERVER['REQUEST_URI'] ?? '/'), '/');
+        return rtrim(self::getInstance()->scheme . '://' . self::getInstance()->host . ($_SERVER['REQUEST_URI'] ?? '/'), '/');
     }
 
     // Get Base URL
@@ -74,7 +78,7 @@ class Uri
      */
     public static function base(): string
     {
-        return self::instance()->baseUrl;
+        return self::getInstance()->baseUrl;
     }
 
     // Get Sub Directory
@@ -83,7 +87,7 @@ class Uri
      */
     public static function directory(): string
     {
-        return trim(self::instance()->directory, '/');
+        return trim(self::getInstance()->directory, '/');
     }
 
     // Get Path
@@ -92,7 +96,7 @@ class Uri
      */
     public static function path(): string
     {
-        return trim(str_replace(self::instance()->directory, '', self::instance()->path), '/');
+        return trim(str_replace(self::getInstance()->directory, '', self::getInstance()->path), '/');
     }
 
     // Get Query Strings
@@ -101,7 +105,7 @@ class Uri
      */
     public static function query(): array
     {
-        parse_str(self::instance()->queryString, $queries);
+        parse_str(self::getInstance()->queryString, $queries);
         return $queries;
     }
 
@@ -113,7 +117,7 @@ class Uri
      */
     public static function get(string $key, ?string $default = null):?string
     {
-        return self::instance()->query()[$key] ?? $default;
+        return self::getInstance()->query()[$key] ?? $default;
     }
 
     // Build URL From Args
@@ -125,7 +129,7 @@ class Uri
     public static function build(string $path = '/', array $params = []):string
     {
         $path = trim($path, '/');
-        $url = self::instance()->base() . $path;
+        $url = self::getInstance()->base() . $path;
         if (!empty($params)) {
             $url .= '?' . http_build_query($params);
         }
@@ -139,7 +143,7 @@ class Uri
      */
     public static function segment(int $index):?string
     {
-        $segments = explode('/', trim(self::instance()->path(), '/'));
+        $segments = explode('/', trim(self::getInstance()->path(), '/'));
         return $segments[$index - 1] ?? null;
     }
 
@@ -149,7 +153,7 @@ class Uri
      */
     public static function segments(): array
     {
-        $segments = explode('/', trim(self::instance()->path(), '/'));
+        $segments = explode('/', trim(self::getInstance()->path(), '/'));
         return $segments[0] ? $segments : [];
     }
 
