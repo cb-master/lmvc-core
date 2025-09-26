@@ -80,7 +80,6 @@ Class Controller
 
         // Create Template Directory htaccess if Not Available
         if(!is_file("{$this->templateDirectory}/.htaccess")) file_put_contents("{$this->templateDirectory}/.htaccess", "Deny from all");
-        if(!is_file("{$this->templateDirectory}/nginx.conf")) file_put_contents("{$this->templateDirectory}/nginx.conf", "deny all");
 
         $view = trim($view, '/');
         $viewFile = "{$this->templateDirectory}/{$view}.tpl.php";
