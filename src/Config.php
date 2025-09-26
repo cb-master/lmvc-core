@@ -55,7 +55,7 @@ class Config
      */
     public static function get(string $name, ?string $key = null, mixed $default = null): mixed
     {
-        $obj = self::load();
+        $obj = self::getInstance();
         $name = strtolower($name);
 
         $result[$name] = '';
@@ -75,7 +75,7 @@ class Config
      */
     public static function set(string $name, string $key, null|int|string|bool|array $value): null|int|string|bool|array
     {
-        $obj    =   $obj = self::load();
+        $obj    =   $obj = self::getInstance();
         $name   =   strtolower($name);
         $key    =   strtolower($key);
 
@@ -105,7 +105,7 @@ class Config
      */
     public static function has(string $name, ?string $key = null): bool
     {
-        $obj    =   $obj = self::load();
+        $obj    =   $obj = self::getInstance();
         $name   =   strtolower($name);
         if($key){
             $key = strtolower($key);
@@ -122,7 +122,7 @@ class Config
      */
     public static function pop(string $name, string $key): bool
     {
-        $obj    =   $obj = self::load();
+        $obj    =   $obj = self::getInstance();
         $name   =   strtolower($name);
         $key    =   strtolower($key);
 
@@ -150,7 +150,7 @@ class Config
      */
     public static function create(string $name, array $data): bool
     {
-        $obj = $obj = self::load();
+        $obj = $obj = self::getInstance();
         $name = trim(strtolower($name));
 
         $file = $obj->path . "/{$name}.php";
@@ -171,7 +171,7 @@ class Config
     ########################################################################################
 
     // Load Configs
-    private static function load(): self // Run this method in the beginning of php codes
+    private static function getInstance(): self // Run this method in the beginning of php codes
     {
         self::$instance ??= new self();
         return self::$instance;

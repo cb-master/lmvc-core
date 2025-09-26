@@ -36,8 +36,14 @@ class Template
     /** Unique placeholder used for parent content inside a child block */
     private const PARENT_PLACEHOLDER = "\x00__PARENT_BLOCK__\x00";
 
-    public function __construct()
+    public function __construct(?string $templateDir = null, ?string $cacheDir = null)
     {
+        if($templateDir) $this->templateDir .= '/'.trim(strtolower($templateDir), '/');
+        if($cacheDir) $this->cacheDir .= '/'.trim(strtolower($cacheDir), '/');
+        
+        if(!Directory::make($this->templateDir)) throw new RuntimeException("Failed to Create Template Directory: {$this->templateDir}");
+        if(!Directory::make($this->cacheDir)) throw new RuntimeException("Failed to Create Template Directory: {$this->cacheDir}");
+
         // Default filters (value, ...args)
         $this->filters = [
             'upper'    => fn($v)        => strtoupper((string)$v),
@@ -58,21 +64,21 @@ class Template
 
     /* ------------------------- Public API ------------------------- */
 
-    public function addTemplateDir(string $directory): void
-    {
-        $directory = trim(strtolower($directory), '/');
-        $this->templateDir .= "/{$directory}";
+    // public function addTemplateDir(string $directory): void
+    // {
+    //     $directory = trim(strtolower($directory), '/');
+    //     $this->templateDir .= "/{$directory}";
         
-        if(!Directory::make($this->templateDir)) throw new RuntimeException("Failed to Create Template Directory: {$directory}");
-    }
+    //     if(!Directory::make($this->templateDir)) throw new RuntimeException("Failed to Create Template Directory: {$directory}");
+    // }
 
-    public function addCacheDir(string $directory): void
-    {
-        $directory = trim(strtolower($directory), '/');
-        $this->cacheDir .= "/{$directory}";
+    // public function addCacheDir(string $directory): void
+    // {
+    //     $directory = trim(strtolower($directory), '/');
+    //     $this->cacheDir .= "/{$directory}";
         
-        if(!Directory::make($this->cacheDir)) throw new RuntimeException("Failed to Create Template Directory: {$directory}");
-    }
+    //     if(!Directory::make($this->cacheDir)) throw new RuntimeException("Failed to Create Template Directory: {$directory}");
+    // }
 
     public function assign(string|array $key, mixed $value = null): void
     {
@@ -94,20 +100,30 @@ class Template
     {
         // Add Default Config Data
         $this->vars['app_info'] = Config::get('app');
-        // Create Template Directory htaccess if Not Available
-        if(!is_file("{$this->templateDir}/.htaccess")) file_put_contents("{$this->templateDir}/.htaccess", "Deny from all");
-        if(!is_file("{$this->templateDir}/nginx.conf")) file_put_contents("{$this->templateDir}/nginx.conf", "deny all");
-        // Create Cache htaccess if Not Available
-        if(!is_file("{$this->cacheDir}/.htaccess")) file_put_contents("{$this->cacheDir}/.htaccess", "Deny from all");
-        if(!is_file("{$this->cacheDir}/nginx.conf")) file_put_contents("{$this->cacheDir}/nginx.conf", "deny all");
 
+        // Create Template Directory htaccess if Not Available
+        $ht = new File($this->templateDir.'/.htaccess');
+        if(!$ht->exists()) $ht->write("Deny from all");
+
+        // Create Cache htaccess if Not Available
+        $ch = new File($this->cacheDir.'/.htaccess');
+        if(!$ch->exists()) $ch->write("Deny from all");
+
+        // Tempale & Cache File Path
         $sourceFile = "{$this->templateDir}/{$view}.tpl.php";
-        if (!is_file($sourceFile)) {
-            throw new \RuntimeException("Template file not found: {$sourceFile}");
-        }
+        $cacheFile = $this->cacheDir . '/' . md5($sourceFile) . '-' . filemtime($sourceFile) . '.cache.php';
+
+        // Make Template File Object
+        $tpl = new File($sourceFile);
+        // Make Cache File Object
+        $cptl = new File($cacheFile);
+
+        // Check File is Exists
+        if(!$tpl->exists()) throw new RuntimeException("Template file not found: {$sourceFile}");
 
         // Read source to determine extends + dependencies
-        $source = file_get_contents($sourceFile);
+        $source = $tpl->read();
+
         // Remove PHP Scripts if Exist
         $source = preg_replace('/<\?(php)?[\s\S]*?\?>/i', '', $source);
         $source = preg_replace('/<\?(=)?[\s\S]*?\?>/i', '', $source);
@@ -115,10 +131,10 @@ class Template
 
         [$parent, $deps] = $this->collectDependencies($source);
 
-        $cacheFile = $this->cacheDir . '/' . md5($sourceFile) . '.cache.php';
-        if ($this->needsRecompile($sourceFile, $cacheFile, $deps)) {
+        // Recompile Cache Template if Source File Modified
+        if($this->needsRecompile($sourceFile, $cacheFile, $deps)){
             $compiled = $this->compileTemplate($source, isChild: (bool) $parent);
-            file_put_contents($cacheFile, $compiled);
+            $cptl->write($compiled);
         }
 
         // Reset child block state each render
@@ -149,6 +165,7 @@ class Template
     {
         $this->blockStack[] = [$name, $mode];
         ob_start();
+        return;
     }
 
     /** End capturing a child block */
@@ -160,6 +177,7 @@ class Template
         [$name, $mode] = array_pop($this->blockStack);
         $this->childBlocks[$name] = ob_get_clean();
         $this->childModes[$name]  = $mode;
+        return;
     }
 
     /** Emits a unique marker that will be replaced by parent default content */
