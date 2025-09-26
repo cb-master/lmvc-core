@@ -248,11 +248,6 @@ class Template
      */
     protected function compileTemplate(string $content, bool $isChild): string
     {
-        // if ($isChild) {
-        //     $content = preg_replace('/\{\%\s*extends\s+[\'\"](.+?)[\'\"]\s*\%\}/', '', $content);
-        // }
-        
-        // Remove the {% extends %} directive from child files during compilation
         // Child blocks: capture content for later merging in parent
         if ($isChild) {
             $content = preg_replace('/\{\%\s*extends\s+[\'\"](.+?)[\'\"]\s*\%\}/', '', $content);
@@ -283,9 +278,18 @@ class Template
             );
         }
 
-        // Includes: inline the included file content at compile time
-        $content = preg_replace_callback('/\{\%\s*include\s+[\'\"](.+?)[\'\"]\s*\%\}/', function ($matches) {
-            $includeFile = $this->templateDir . $matches[1];
+        // // Includes: inline the included file content at compile time
+        // $content = preg_replace_callback('/\{\%\s*include\s+[\'\"](.+?)[\'\"]\s*\%\}/', function ($matches) {
+        //     $includeFile = $this->templateDir . $matches[1];
+        //     return is_file($includeFile) ? file_get_contents($includeFile) : '';
+        // }, $content);
+        $content = preg_replace_callback('/\{\%\s*include\s+[\'"](.+?)[\'"]\s*\%\}/', function ($matches) {
+            $file = $matches[1];
+            // Add .tpl.php automatically if missing
+            if (!str_ends_with($file, '.tpl.php')) {
+                $file .= '.tpl.php';
+            }
+            $includeFile = $this->templateDir . '/' . ltrim($file, '/');
             return is_file($includeFile) ? file_get_contents($includeFile) : '';
         }, $content);
 
@@ -361,8 +365,16 @@ class Template
             $parent = $m[1];
         }
         $includes = [];
-        if (preg_match_all('/\{\%\s*include\s+[\'\"](.+?)[\'\"]\s*\%\}/', $source, $mm)) {
-            $includes = $mm[1];
+        // if (preg_match_all('/\{\%\s*include\s+[\'\"](.+?)[\'\"]\s*\%\}/', $source, $mm)) {
+        //     $includes = $mm[1];
+        // }
+        if (preg_match_all('/\{\%\s*include\s*[\'"](.+?)[\'"]\s*\%\}/', $source, $mm)) {
+            $includes = array_map(function ($file) {
+                if (!str_ends_with($file, '.tpl.php')) {
+                    $file .= '.tpl.php';
+                }
+                return '/' . ltrim($file, '/');
+            }, $mm[1]);
         }
         return [$parent, $includes];
     }

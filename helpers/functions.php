@@ -47,10 +47,9 @@ function show(mixed $data, bool $die = false): void
 /**
  * @param string|array $slug Required Argument
  * @param ?array $params Optional Argument.
- * @param int $response Optioanl parameter. Default is 302
  * @return void
 */
-function redirect(string|array $slug, ?array $params = null, int $response = 302): void
+function redirect(string|array $slug, ?array $params = null): void
 {
     // Convert to String if Slug is Array
     if(is_array($slug)) $slug = implode('/', array_map('trim', $slug));
@@ -58,7 +57,7 @@ function redirect(string|array $slug, ?array $params = null, int $response = 302
     $slug = trim($slug, '/');
 
     // Redirect
-    header('Location:'.Uri::build($slug, $params ?: []), true, $response);
+    header('Location:'.Uri::build($slug, $params ?: []), true);
     die();
 }
 
