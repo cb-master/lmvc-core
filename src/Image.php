@@ -39,18 +39,18 @@ class Image
     protected GdImage $image;
 
     /**
-     * @param string $filepath Resource Image Filepath
+     * @param string $file Resource Image Filepath
      */
-    public function __construct(string $filepath)
+    public function __construct(string $file)
     {
-        if (!file_exists($filepath)) {
-            throw new \InvalidArgumentException("Image File Not Found: {$filepath}");
+        if (!file_exists($file)) {
+            throw new \InvalidArgumentException("Image File Not Found: {$file}");
         }
 
-        $info = getimagesize($filepath);
+        $info = getimagesize($file);
         if(!$info) throw new \RuntimeException("Not a Valid Image!");
 
-        $this->path = $filepath;
+        $this->path = $file;
         $this->mime = $info['mime'];
         $this->width = $info[0];
         $this->height = $info[1];
