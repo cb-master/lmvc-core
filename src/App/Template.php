@@ -15,7 +15,7 @@ namespace CBM\Core\App;
 // Deny Direct Access
 defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
-use CBM\Core\{Directory, File, Config};
+use CBM\Core\{Directory, File, Config, ClientInfo};
 use RuntimeException;
 
 class Template
@@ -42,9 +42,14 @@ class Template
     {
         // Assign Vars
         $this->vars = array_merge($this->vars, $args);
+        // Add Default Config Data
+        $this->vars['app_info'] = Config::get('app');
+        // Add Client Info
+        $this->vars['client_info'] = new ClientInfo();
 
         // Default filters (value, ...args)
         $this->filters = [
+            'date'     => fn($v)        => date((string)$v),
             'upper'    => fn($v)        => strtoupper((string)$v),
             'lower'    => fn($v)        => strtolower((string)$v),
             'ucfirst'  => fn($v)        => ucfirst((string)$v),
@@ -116,10 +121,7 @@ class Template
     /** Render a template file */
     protected function view(string $view): void
     {
-        // Add Default Config Data
-        $this->vars['app_info'] = Config::get('app');
-
-        // Require All Template Helpers
+        // Require All Template Hooks
         $hooks_path = $this->templateDir . '/hooks';
         // Create Hooks Path if Does Not Exists
         Directory::make($hooks_path);
@@ -323,8 +325,14 @@ class Template
             $expr = trim($matches[1]);
             // Split by pipe not inside parentheses
             $parts = preg_split('/\|(?![^\(]*\))/', $expr);
-            $base  = array_shift($parts);
-            $php   = '$' . trim($base);
+            $base = trim(array_shift($parts));
+
+            // Detect string literals, numbers, or expressions
+            if (preg_match('/^([\'"]).*\1$/', $base) || is_numeric($base) || is_bool($base)) {
+                $php = $base; // Leave strings ("..."), numbers and bollean as-is
+            } else {
+                $php = '$' . $base; // Treat as variable
+            }
             $raw   = false;
 
             foreach ($parts as $seg) {

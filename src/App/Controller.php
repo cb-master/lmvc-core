@@ -16,7 +16,7 @@ namespace CBM\Core\App;
 // Deny Direct Access
 defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
-use CBM\Core\{Directory, Config};
+use CBM\Core\{Directory, Config, ClientInfo};
 use RuntimeException;
 
 Class Controller
@@ -32,6 +32,9 @@ Class Controller
     {
         // Assign Vars
         $this->vars = array_merge($this->vars, $args);
+        // Add Default Config Data
+        $this->vars['app_info'] = Config::get('app');
+        $this->vars['client_info'] = new ClientInfo();
     }
 
     // Assign Variables to Controller
@@ -83,10 +86,7 @@ Class Controller
      * @param string $view View File Name. Example: index
      */
     protected function view(string $view): void
-    {
-        // Add Default Config Data
-        $this->vars['app_info'] = Config::get('app');
-        
+    {        
         // Require All Template Helpers
         $hooks_path = $this->templateDirectory . '/hooks';
         // Create Hooks Path if Does Not Exists
