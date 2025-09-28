@@ -23,7 +23,7 @@ class {{NAME}} Extends Controller
     /**
     * Args contains Request Object and Other Route Parameters
     */
-    public function index(array $args)
+    public function index()
     {
         // Args contains Request Object and other route parameters
         /**
@@ -31,9 +31,6 @@ class {{NAME}} Extends Controller
          */
         // Assign Data
         $this->assign('title', 'Home');
-
-        // Assign Default Args
-        $this->assign($args);
         
         // load View File
         $this->view('{{VIEW}}');

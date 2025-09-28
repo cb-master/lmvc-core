@@ -31,7 +31,7 @@ class Env
     // Get Instance
     private static function getInstance()
     {
-        self::$instance ?? new self();
+        self::$instance ??= new self();
         return self::$instance;
     }
 

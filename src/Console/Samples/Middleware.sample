@@ -18,8 +18,7 @@ defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
 class {{NAME}}
 {
-    public function handle(array $args)
-    {
-        //
-    }
+    public function __construct(){}
+
+    public function handle(array $args){}
 }

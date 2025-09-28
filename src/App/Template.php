@@ -10,11 +10,12 @@
 
 declare(strict_types=1);
 
-namespace CBM\Core;
+namespace CBM\Core\App;
 
 // Deny Direct Access
 defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
+use CBM\Core\{Directory, File, Config, ClientInfo};
 use RuntimeException;
 
 class Template
@@ -35,11 +36,20 @@ class Template
 
     /** Unique placeholder used for parent content inside a child block */
     private const PARENT_PLACEHOLDER = "\x00__PARENT_BLOCK__\x00";
-
-    public function __construct()
+    
+    /* ------------------------- Public API ------------------------- */
+    public function __construct(array $args)
     {
+        // Assign Vars
+        $this->vars = array_merge($this->vars, $args);
+        // Add Default Config Data
+        $this->vars['app_info'] = Config::get('app');
+        // Add Client Info
+        $this->vars['client_info'] = new ClientInfo();
+
         // Default filters (value, ...args)
         $this->filters = [
+            'date'     => fn($v)        => date((string)$v),
             'upper'    => fn($v)        => strtoupper((string)$v),
             'lower'    => fn($v)        => strtolower((string)$v),
             'ucfirst'  => fn($v)        => ucfirst((string)$v),
@@ -56,25 +66,34 @@ class Template
         ];
     }
 
-    /* ------------------------- Public API ------------------------- */
-
-    public function addTemplateDir(string $directory): void
+    ####################################################################
+    /* ------------------------ INTERNAL API ------------------------ */
+    ####################################################################
+    // Set Template Sub Directory
+    /**
+     * @param string $directory Sub Directory inside lf-templates Directory
+     * @return void
+     */
+    protected function addTemplateDir(string $directory): void
     {
-        $directory = trim(strtolower($directory), '/');
-        $this->templateDir .= "/{$directory}";
-        
-        if(!Directory::make($this->templateDir)) throw new RuntimeException("Failed to Create Template Directory: {$directory}");
+        $this->templateDir .= '/'.trim(strtolower($directory), '/');
+        if(!Directory::make($this->templateDir)) throw new RuntimeException("Failed to Create Template Directory: {$this->templateDir}");
+        return;
     }
 
-    public function addCacheDir(string $directory): void
+    // Set Cache Sub Directory
+    /**
+     * @param string $directory Sub Directory inside tf-cache Directory Directory
+     * @return void
+     */
+    protected function addCacheDir(string $directory): void
     {
-        $directory = trim(strtolower($directory), '/');
-        $this->cacheDir .= "/{$directory}";
-        
-        if(!Directory::make($this->cacheDir)) throw new RuntimeException("Failed to Create Template Directory: {$directory}");
+        $this->cacheDir .= '/'.trim(strtolower($directory), '/');
+        if(!Directory::make($this->cacheDir)) throw new RuntimeException("Failed to Create Template Directory: {$this->cacheDir}");
+        return;
     }
 
-    public function assign(string|array $key, mixed $value = null): void
+    protected function assign(string|array $key, mixed $value = null): void
     {
         if(is_array($key)){
             $this->vars = array_merge($key, $this->vars);
@@ -83,31 +102,58 @@ class Template
         }
     }
 
+    // Get Assigned Vars
+    /**
+     * Get All Assigned Vars in Controller
+     * @return array
+     */
+    protected function getAssignedVars(): array
+    {
+        return array_keys($this->vars);
+    }
+
     /** Register a custom filter. Callback signature: fn($value, ...$args): mixed */
-    public function addFilter(string $name, string|callable $callback): void
+    protected function addFilter(string $name, string|callable $callback): void
     {
         $this->filters[$name] = $callback;
     }
 
     /** Render a template file */
-    public function view(string $view): void
+    protected function view(string $view): void
     {
-        // Add Default Config Data
-        $this->vars['app_info'] = Config::get('app');
-        // Create Template Directory htaccess if Not Available
-        if(!is_file("{$this->templateDir}/.htaccess")) file_put_contents("{$this->templateDir}/.htaccess", "Deny from all");
-        if(!is_file("{$this->templateDir}/nginx.conf")) file_put_contents("{$this->templateDir}/nginx.conf", "deny all");
-        // Create Cache htaccess if Not Available
-        if(!is_file("{$this->cacheDir}/.htaccess")) file_put_contents("{$this->cacheDir}/.htaccess", "Deny from all");
-        if(!is_file("{$this->cacheDir}/nginx.conf")) file_put_contents("{$this->cacheDir}/nginx.conf", "deny all");
-
-        $sourceFile = "{$this->templateDir}/{$view}.tpl.php";
-        if (!is_file($sourceFile)) {
-            throw new \RuntimeException("Template file not found: {$sourceFile}");
+        // Require All Template Hooks
+        $hooks_path = $this->templateDir . '/hooks';
+        // Create Hooks Path if Does Not Exists
+        Directory::make($hooks_path);
+        // Load Hooks
+        $files = Directory::scanRecursive($hooks_path, true, ['php']);
+        foreach($files as $file){
+            require_once $file;
         }
 
+        // Create Template Directory htaccess if Not Available
+        $ht = new File($this->templateDir.'/.htaccess');
+        if(!$ht->exists()) $ht->write("Deny from all");
+
+        // Create Cache htaccess if Not Available
+        $ch = new File($this->cacheDir.'/.htaccess');
+        if(!$ch->exists()) $ch->write("Deny from all");
+
+        // Tempale & Cache File Path
+        $sourceFile = "{$this->templateDir}/{$view}.tpl.php";
+        $cacheFile = $this->cacheDir . '/' . md5($sourceFile) . '-' . filemtime($sourceFile) . '.cache.php';
+
+        // Make Template File Object
+        $tpl = new File($sourceFile);
+        // Make Cache File Object
+        $cptl = new File($cacheFile);
+
+        // Check File is Exists
+        if(!$tpl->exists()) throw new RuntimeException("Template file not found: {$sourceFile}");
+
         // Read source to determine extends + dependencies
-        $source = file_get_contents($sourceFile);
+        $source = $tpl->read();
+
         // Remove PHP Scripts if Exist
         $source = preg_replace('/<\?(php)?[\s\S]*?\?>/i', '', $source);
         $source = preg_replace('/<\?(=)?[\s\S]*?\?>/i', '', $source);
@@ -115,10 +161,10 @@ class Template
 
         [$parent, $deps] = $this->collectDependencies($source);
 
-        $cacheFile = $this->cacheDir . '/' . md5($sourceFile) . '.cache.php';
-        if ($this->needsRecompile($sourceFile, $cacheFile, $deps)) {
+        // Recompile Cache Template if Source File Modified
+        if($this->needsRecompile($sourceFile, $cacheFile, $deps)){
             $compiled = $this->compileTemplate($source, isChild: (bool) $parent);
-            file_put_contents($cacheFile, $compiled);
+            $cptl->write($compiled);
         }
 
         // Reset child block state each render
@@ -145,14 +191,15 @@ class Template
     /* -------------------- Block Helpers (child) ------------------- */
 
     /** Begin capturing a child block */
-    public function startBlock(string $name, string $mode = 'replace'): void
+    protected function startBlock(string $name, string $mode = 'replace'): void
     {
         $this->blockStack[] = [$name, $mode];
         ob_start();
+        return;
     }
 
     /** End capturing a child block */
-    public function endBlock(): void
+    protected function endBlock(): void
     {
         if (empty($this->blockStack)) {
             throw new \LogicException('endBlock() called without matching startBlock().');
@@ -160,10 +207,11 @@ class Template
         [$name, $mode] = array_pop($this->blockStack);
         $this->childBlocks[$name] = ob_get_clean();
         $this->childModes[$name]  = $mode;
+        return;
     }
 
     /** Emits a unique marker that will be replaced by parent default content */
-    public function parentPlaceholder(): string
+    protected function parentPlaceholder(): string
     {
         return self::PARENT_PLACEHOLDER;
     }
@@ -174,7 +222,7 @@ class Template
      * Resolve a block by merging parent default and child override using mode.
      * Used from compiled parent templates.
      */
-    public function resolveBlock(string $name, string $default): string
+    protected function resolveBlock(string $name, string $default): string
     {
         $child = $this->childBlocks[$name] ?? '';
         $mode  = $this->childModes[$name]  ?? 'replace';
@@ -190,8 +238,6 @@ class Template
             default   => ($child !== '' ? $child : $default),
         };
     }
-
-    /* -------------------- Internal: Rendering Parent -------------- */
 
     protected function renderParent(string $parentTemplate): string
     {
@@ -222,18 +268,11 @@ class Template
         return $out;
     }
 
-    /* -------------------- Internal: Compilation ------------------- */
-
     /**
      * Convert template syntax to PHP. If $isChild is true, compile block tags to capture child content.
      */
     protected function compileTemplate(string $content, bool $isChild): string
     {
-        // if ($isChild) {
-        //     $content = preg_replace('/\{\%\s*extends\s+[\'\"](.+?)[\'\"]\s*\%\}/', '', $content);
-        // }
-        
-        // Remove the {% extends %} directive from child files during compilation
         // Child blocks: capture content for later merging in parent
         if ($isChild) {
             $content = preg_replace('/\{\%\s*extends\s+[\'\"](.+?)[\'\"]\s*\%\}/', '', $content);
@@ -264,9 +303,13 @@ class Template
             );
         }
 
-        // Includes: inline the included file content at compile time
-        $content = preg_replace_callback('/\{\%\s*include\s+[\'\"](.+?)[\'\"]\s*\%\}/', function ($matches) {
-            $includeFile = $this->templateDir . $matches[1];
+        $content = preg_replace_callback('/\{\%\s*include\s+[\'"](.+?)[\'"]\s*\%\}/', function ($matches) {
+            $file = $matches[1];
+            // Add .tpl.php automatically if missing
+            if (!str_ends_with($file, '.tpl.php')) {
+                $file .= '.tpl.php';
+            }
+            $includeFile = $this->templateDir . '/' . ltrim($file, '/');
             return is_file($includeFile) ? file_get_contents($includeFile) : '';
         }, $content);
 
@@ -282,8 +325,14 @@ class Template
             $expr = trim($matches[1]);
             // Split by pipe not inside parentheses
             $parts = preg_split('/\|(?![^\(]*\))/', $expr);
-            $base  = array_shift($parts);
-            $php   = '$' . trim($base);
+            $base = trim(array_shift($parts));
+
+            // Detect string literals, numbers, or expressions
+            if (preg_match('/^([\'"]).*\1$/', $base) || is_numeric($base) || is_bool($base)) {
+                $php = $base; // Leave strings ("..."), numbers and bollean as-is
+            } else {
+                $php = '$' . $base; // Treat as variable
+            }
             $raw   = false;
 
             foreach ($parts as $seg) {
@@ -318,8 +367,6 @@ class Template
         return $content;
     }
 
-    /* -------------------- Internal: Filters ----------------------- */
-
     /** Apply a filter by name to a value with optional args. Used by compiled code */
     public function applyFilter(string $name, mixed $value, ...$args): mixed
     {
@@ -342,8 +389,16 @@ class Template
             $parent = $m[1];
         }
         $includes = [];
-        if (preg_match_all('/\{\%\s*include\s+[\'\"](.+?)[\'\"]\s*\%\}/', $source, $mm)) {
-            $includes = $mm[1];
+        // if (preg_match_all('/\{\%\s*include\s+[\'\"](.+?)[\'\"]\s*\%\}/', $source, $mm)) {
+        //     $includes = $mm[1];
+        // }
+        if (preg_match_all('/\{\%\s*include\s*[\'"](.+?)[\'"]\s*\%\}/', $source, $mm)) {
+            $includes = array_map(function ($file) {
+                if (!str_ends_with($file, '.tpl.php')) {
+                    $file .= '.tpl.php';
+                }
+                return '/' . ltrim($file, '/');
+            }, $mm[1]);
         }
         return [$parent, $includes];
     }

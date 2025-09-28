@@ -176,8 +176,7 @@ class ErrorHandler
 
             // Special handling for PDOException
             if($ex instanceof PDOException){
-                $sqlState = $ex->getCode();
-                $extra .= "<tr><th>SQLSTATE</th><td>" . htmlspecialchars($sqlState) . "</td></tr>";
+                $extra .= "<tr><th>SQLSTATE</th><td>{$ex->getCode()}</td></tr>";
 
                 if(isset($ex->errorInfo) && is_array($ex->errorInfo)){
                     $str = implode(' >> ', $ex->errorInfo);

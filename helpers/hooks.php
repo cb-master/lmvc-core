@@ -16,7 +16,10 @@ defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 use CBM\Core\Uri;
 
 // App Uri
-add_filter('app_uri', function(): string { return option('app_host') ?: Uri::base(); });
+add_filter('app.uri', function(): string { return option('app_host') ?: Uri::base(); });
+
+// Home Page Uri
+add_filter('app.home', function(): string { return option('app_host') ?: Uri::base(); });
 
 // Asset Path
 /**
@@ -25,7 +28,10 @@ add_filter('app_uri', function(): string { return option('app_host') ?: Uri::bas
  * @return string
  */
 // Load Asset
-add_filter('load_asset', function(string $file): string {
+add_filter('template.asset', function(string $file): string {
+    if(parse_url($file, PHP_URL_HOST)){
+        return $file;
+    }
     $file = trim($file, '/');
-    return apply_filter('app_uri') . "resource/{$file}";
+    return apply_filter('app.uri') . "resource/{$file}";
 });

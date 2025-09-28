@@ -8,8 +8,6 @@
 // Namespace
 namespace CBM\Core;
 
-use InvalidArgumentException;
-
 class File
 {
     // Path
@@ -126,7 +124,10 @@ class File
      */
     public function write(string $str): bool
     {
-        return $this->writable() ? (file_put_contents($this->file, $str) !== false) : false;
+        // Make Directory if Not Exists
+        Directory::make($this->path());
+        // Write Contents
+        return file_put_contents($this->file, $str) !== false;
     }
 
     /**
