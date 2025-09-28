@@ -256,10 +256,10 @@ class Router
             // Allow {param} and {param:regex}
             $pattern = preg_replace_callback(
                 '/\{([a-zA-Z_][a-zA-Z0-9_]*)(:([^}]+))?\}/',
-                function ($matches) {
+                function ($params) {
                     // {param:regex}
-                    if (!empty($matches[3])) {
-                        return '(' . $matches[3] . ')';
+                    if (!empty($params[3])) {
+                        return '(' . $params[3] . ')';
                     }
                     // {param} default
                     return '([a-zA-Z0-9-_]+)';
@@ -268,12 +268,15 @@ class Router
             );
             $pattern = "#^{$pattern}$#";
 
-            if (preg_match($pattern, $path, $matches)) {
-                array_shift($matches);
+            if (preg_match($pattern, $path, $params)) {
+                array_shift($params);
 
-                $args['params'] =   $matches;
-                $args['request']=   $request;
-                $args['uri']    =   Uri::getInstance();
+                // Get URI Instance
+                $args = [
+                    'request'   =>  $request,
+                    'params'   =>  $params,
+                    'uri'       =>  Uri::getInstance(),
+                ];
 
                 // Run global + route middlewares
                 foreach(array_merge($routes->globalMiddlewares, $data['middlewares']) as $middleware){
@@ -288,7 +291,7 @@ class Router
                 if (is_string($callback)) {
                     [$controller, $methodName] = explode('@', $callback);
                     $controller = "CBM\\App\\Controller\\{$controller}";
-                    $routes->invokeController($controller, $methodName, $matches, $request);
+                    $routes->invokeController($controller, $methodName, $args);
                     return;
                 }
 
@@ -296,13 +299,13 @@ class Router
                 if (is_array($callback)) {
                     [$controller, $methodName] = $callback;
                     $controller = "CBM\\App\\Controller\\{$controller}";
-                    $routes->invokeController($controller, $methodName, $matches, $request);
+                    $routes->invokeController($controller, $methodName, $args);
                     return;
                 }
 
                 // Handle closures/callables
                 if (is_callable($callback)) {
-                    call_user_func_array($callback, $matches);
+                    call_user_func_array($callback, $params);
                     return;
                 }
             }
@@ -373,7 +376,7 @@ class Router
      * @param Request $request The current HTTP request
      * @return void
      */
-    private function invokeController(string $controller, string $methodName, array $params, Request $request): void
+    private function invokeController(string $controller, string $method, array $args): void
     {
         if (!class_exists($controller)) {
             http_response_code(500);
@@ -381,11 +384,7 @@ class Router
             return;
         }
 
-        $args['params'] =   $params;
-        $args['request']=   $request;
-        $args['uri']    =   Uri::getInstance();
-
-        call_user_func([new $controller, $methodName], $args);
+        call_user_func_array([new $controller($args), $method], []);
         return;
     }
 
@@ -395,16 +394,16 @@ class Router
      * @param mixed ...$args The current HTTP request
      * @return bool True to continue, false to stop the request
      */
-    private function runMiddleware(string|callable $middleware, array ...$args): bool
+    private function runMiddleware(string|callable $middleware, array $args): bool
     {
         if(is_callable($middleware)){
-            return call_user_func_array($middleware, $args) !== false;
+            return call_user_func($middleware, $args) !== false;
         }
 
         if(class_exists($middleware)){
             $instance = new $middleware();
             if (method_exists($instance, 'handle')) {
-                return call_user_func_array([$instance, 'handle'], $args) !== false;
+                return call_user_func([$instance, 'handle'], $args) !== false;
             }
         }
 

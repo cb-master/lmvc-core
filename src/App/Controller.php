@@ -27,6 +27,13 @@ Class Controller
     /** Variables available to templates */
     protected array $vars = [];
 
+    // Initiate Controller & Assign Controller Vars
+    public function __construct(array $args)
+    {
+        // Assign Vars
+        $this->vars = array_merge($this->vars, $args);
+    }
+
     // Assign Variables to Controller
     /**
      * @param string|array $key Key or Array of Key-Value Pairs
@@ -43,6 +50,16 @@ Class Controller
             $this->vars[$key] = $value;
         }
         return;
+    }
+
+    // Get Assigned Vars
+    /**
+     * Get All Assigned Vars in Controller
+     * @return array
+     */
+    protected function getAssignedVars(): array
+    {
+        return array_keys($this->vars);
     }
 
     // Set Template Sub Directory

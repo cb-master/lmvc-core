@@ -10,33 +10,30 @@
 
 declare(strict_types=1);
 
-namespace CBM\App\Controller;
+// Namespace
+namespace CBM\App\Controller{{NAMESPACE}};
 
 // Deny Direct Access
 defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
-use CBM\Core\{App\Controller, Template};
+use CBM\Core\App\Template;
 
-class {{NAME}} Extends Controller
+class {{NAME}} Extends Template
 {
     /**
     * Args contains Request Object and Other Route Parameters
     */
-    public function index(array $args)
+    public function index()
     {
+        // Args contains Request Object and other route parameters
         /**
-         * Using Template Engine Compile View File
+         * Using Without Template Engine Compile View File
          */
-        // Get Template Engine
-        $tpl = new Template();
-
         // Assign Data
-        $tpl->assign('title', 'Home');
+        $this->assign('title', 'Home');
+        $this->assign('welcome', 'This is {{NAME}} Page');
         
-        // Assign Default Args
-        $this->assign($args);
-
-        // Load View File
-        $tpl->view('{{VIEW}}');
+        // load View File
+        $this->view('tpl-{{VIEW}}');
     }
 }

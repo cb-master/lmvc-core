@@ -10,11 +10,12 @@
 
 declare(strict_types=1);
 
-namespace CBM\Core;
+namespace CBM\Core\App;
 
 // Deny Direct Access
 defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
+use CBM\Core\{Directory, File, Config};
 use RuntimeException;
 
 class Template
@@ -35,15 +36,12 @@ class Template
 
     /** Unique placeholder used for parent content inside a child block */
     private const PARENT_PLACEHOLDER = "\x00__PARENT_BLOCK__\x00";
-
-    public function __construct(?string $templateDir = null, ?string $cacheDir = null)
+    
+    /* ------------------------- Public API ------------------------- */
+    public function __construct(array $args)
     {
-        if($templateDir) $this->templateDir .= '/'.trim(strtolower($templateDir), '/');
-        if($cacheDir) $this->cacheDir .= '/'.trim(strtolower($cacheDir), '/');
-        
-        // Make Directories if Does Not Exists
-        if(!Directory::make($this->templateDir)) throw new RuntimeException("Failed to Create Template Directory: {$this->templateDir}");
-        if(!Directory::make($this->cacheDir)) throw new RuntimeException("Failed to Create Template Directory: {$this->cacheDir}");
+        // Assign Vars
+        $this->vars = array_merge($this->vars, $args);
 
         // Default filters (value, ...args)
         $this->filters = [
@@ -63,25 +61,34 @@ class Template
         ];
     }
 
-    /* ------------------------- Public API ------------------------- */
+    ####################################################################
+    /* ------------------------ INTERNAL API ------------------------ */
+    ####################################################################
+    // Set Template Sub Directory
+    /**
+     * @param string $directory Sub Directory inside lf-templates Directory
+     * @return void
+     */
+    protected function addTemplateDir(string $directory): void
+    {
+        $this->templateDir .= '/'.trim(strtolower($directory), '/');
+        if(!Directory::make($this->templateDir)) throw new RuntimeException("Failed to Create Template Directory: {$this->templateDir}");
+        return;
+    }
 
-    // public function addTemplateDir(string $directory): void
-    // {
-    //     $directory = trim(strtolower($directory), '/');
-    //     $this->templateDir .= "/{$directory}";
-        
-    //     if(!Directory::make($this->templateDir)) throw new RuntimeException("Failed to Create Template Directory: {$directory}");
-    // }
+    // Set Cache Sub Directory
+    /**
+     * @param string $directory Sub Directory inside tf-cache Directory Directory
+     * @return void
+     */
+    protected function addCacheDir(string $directory): void
+    {
+        $this->cacheDir .= '/'.trim(strtolower($directory), '/');
+        if(!Directory::make($this->cacheDir)) throw new RuntimeException("Failed to Create Template Directory: {$this->cacheDir}");
+        return;
+    }
 
-    // public function addCacheDir(string $directory): void
-    // {
-    //     $directory = trim(strtolower($directory), '/');
-    //     $this->cacheDir .= "/{$directory}";
-        
-    //     if(!Directory::make($this->cacheDir)) throw new RuntimeException("Failed to Create Template Directory: {$directory}");
-    // }
-
-    public function assign(string|array $key, mixed $value = null): void
+    protected function assign(string|array $key, mixed $value = null): void
     {
         if(is_array($key)){
             $this->vars = array_merge($key, $this->vars);
@@ -90,14 +97,24 @@ class Template
         }
     }
 
+    // Get Assigned Vars
+    /**
+     * Get All Assigned Vars in Controller
+     * @return array
+     */
+    protected function getAssignedVars(): array
+    {
+        return array_keys($this->vars);
+    }
+
     /** Register a custom filter. Callback signature: fn($value, ...$args): mixed */
-    public function addFilter(string $name, string|callable $callback): void
+    protected function addFilter(string $name, string|callable $callback): void
     {
         $this->filters[$name] = $callback;
     }
 
     /** Render a template file */
-    public function view(string $view): void
+    protected function view(string $view): void
     {
         // Add Default Config Data
         $this->vars['app_info'] = Config::get('app');
@@ -162,7 +179,7 @@ class Template
     /* -------------------- Block Helpers (child) ------------------- */
 
     /** Begin capturing a child block */
-    public function startBlock(string $name, string $mode = 'replace'): void
+    protected function startBlock(string $name, string $mode = 'replace'): void
     {
         $this->blockStack[] = [$name, $mode];
         ob_start();
@@ -170,7 +187,7 @@ class Template
     }
 
     /** End capturing a child block */
-    public function endBlock(): void
+    protected function endBlock(): void
     {
         if (empty($this->blockStack)) {
             throw new \LogicException('endBlock() called without matching startBlock().');
@@ -182,7 +199,7 @@ class Template
     }
 
     /** Emits a unique marker that will be replaced by parent default content */
-    public function parentPlaceholder(): string
+    protected function parentPlaceholder(): string
     {
         return self::PARENT_PLACEHOLDER;
     }
@@ -193,7 +210,7 @@ class Template
      * Resolve a block by merging parent default and child override using mode.
      * Used from compiled parent templates.
      */
-    public function resolveBlock(string $name, string $default): string
+    protected function resolveBlock(string $name, string $default): string
     {
         $child = $this->childBlocks[$name] ?? '';
         $mode  = $this->childModes[$name]  ?? 'replace';
@@ -209,8 +226,6 @@ class Template
             default   => ($child !== '' ? $child : $default),
         };
     }
-
-    /* -------------------- Internal: Rendering Parent -------------- */
 
     protected function renderParent(string $parentTemplate): string
     {
@@ -240,8 +255,6 @@ class Template
         // renderParent($grandParent) again. For now we stop at one level for simplicity.
         return $out;
     }
-
-    /* -------------------- Internal: Compilation ------------------- */
 
     /**
      * Convert template syntax to PHP. If $isChild is true, compile block tags to capture child content.
@@ -278,11 +291,6 @@ class Template
             );
         }
 
-        // // Includes: inline the included file content at compile time
-        // $content = preg_replace_callback('/\{\%\s*include\s+[\'\"](.+?)[\'\"]\s*\%\}/', function ($matches) {
-        //     $includeFile = $this->templateDir . $matches[1];
-        //     return is_file($includeFile) ? file_get_contents($includeFile) : '';
-        // }, $content);
         $content = preg_replace_callback('/\{\%\s*include\s+[\'"](.+?)[\'"]\s*\%\}/', function ($matches) {
             $file = $matches[1];
             // Add .tpl.php automatically if missing
@@ -340,8 +348,6 @@ class Template
 
         return $content;
     }
-
-    /* -------------------- Internal: Filters ----------------------- */
 
     /** Apply a filter by name to a value with optional args. Used by compiled code */
     public function applyFilter(string $name, mixed $value, ...$args): mixed
