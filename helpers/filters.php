@@ -18,6 +18,9 @@ use CBM\Core\Uri;
 // App Uri
 add_filter('app.uri', function(): string { return option('app_host') ?: Uri::base(); });
 
+// Home Page Uri
+add_filter('app.home', function(): string { return option('app_host') ?: Uri::base(); });
+
 // Asset Path
 /**
  * @param string $path. Example 'css/style.css'
