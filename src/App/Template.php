@@ -119,6 +119,16 @@ class Template
         // Add Default Config Data
         $this->vars['app_info'] = Config::get('app');
 
+        // Require All Template Helpers
+        $hooks_path = $this->templateDir . '/hooks';
+        // Create Hooks Path if Does Not Exists
+        Directory::make($hooks_path);
+        // Load Hooks
+        $files = Directory::scanRecursive($hooks_path, true, ['php']);
+        foreach($files as $file){
+            require_once $file;
+        }
+
         // Create Template Directory htaccess if Not Available
         $ht = new File($this->templateDir.'/.htaccess');
         if(!$ht->exists()) $ht->write("Deny from all");
