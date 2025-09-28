@@ -9,7 +9,7 @@
         },
         "files":[
             "helpers/functions.php",
-            "helpers/filters.php"
+            "helpers/hooks.php"
         ]
     },
     "authors": [

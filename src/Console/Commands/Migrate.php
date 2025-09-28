@@ -27,8 +27,8 @@ class Migrate Extends Command
     private function defaulKeys(): array
     {
         return [
-            'app_name'      =>  'CBM Framework',
-            'time_zone'     =>  'Europe/London',
+            'app.name'      =>  'CBM Framework',
+            'time.zone'     =>  'Europe/London',
             'dateformat'    =>  'Y-M-d H:i:s',
             'dbsession'     =>  'yes',
             'developermode' =>  'yes',
