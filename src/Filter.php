@@ -22,9 +22,6 @@ class Filter
     /** @var array<string, array<int, callable[]>> $filters */
     private static array $filters = [];
 
-    /** @var array<string, array<mixed>> $assets */
-    private static array $assets = [];
-
     /**
      * Register a filter callback.
      *
@@ -60,38 +57,5 @@ class Filter
         }
 
         return $value;
-    }
-
-    /**
-     * Assign a value to a named asset group.
-     *
-     * @param string $key   Asset name.
-     * @param mixed  $value Value to store.
-     */
-    public static function assignAsset(string $key, mixed $value): void
-    {
-        self::$assets[$key][] = $value;
-    }
-
-    /**
-     * Retrieve all assigned values for a given asset key.
-     *
-     * @param string $key Asset name.
-     *
-     * @return array<mixed>
-     * @throws Exception If the asset key doesn't exist.
-     */
-    public static function getAssignedAssets(string $key): array
-    {
-        if (!isset(self::$assets[$key])) {
-            throw new Exception("Assigned Filter '{$key}' Does Not Exist!", 80000);
-        }
-
-        $values = [];
-        foreach (self::$assets[$key] as $value) {
-            $values[] = self::apply_filter("assigned_filter_{$key}", $value);
-        }
-
-        return $values;
     }
 }
