@@ -205,7 +205,7 @@ class ClientInfo
                 $ipList = explode(',', $_SERVER[$key]);
                 foreach ($ipList as $ip) {
                     $ip = trim($ip);
-                    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_RES_RANGE)) {
+                    if (filter_var($ip)) {
                         return $ip;
                     }
                 }
