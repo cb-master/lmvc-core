@@ -20,8 +20,10 @@ use RuntimeException;
 
 class Template
 {
-    protected string $templateDir = APP_PATH . '/lf-templates';
-    protected string $cacheDir = APP_PATH . '/lf-cache';
+    // Template Directory
+    protected string $templateDir;
+    // Cache Directory
+    protected string $cacheDir;
 
     /** Variables available to templates */
     protected array $vars = [];
@@ -40,6 +42,10 @@ class Template
     /* ------------------------- Public API ------------------------- */
     public function __construct(array $args)
     {
+        // Template/Cache Directory
+        $this->templateDir = Config::get('app', 'template.dir', APP_PATH . '/lf-templates/');
+        $this->cacheDir = Config::get('app', 'template.cache', APP_PATH . '/lf-cache/');
+
         // Assign Vars
         $this->vars = array_merge($this->vars, $args);
         // Add Default Config Data
@@ -76,7 +82,12 @@ class Template
      */
     protected function addTemplateDir(string $directory): void
     {
-        $this->templateDir .= '/'.trim(strtolower($directory), '/');
+        if(realpath($directory)){
+            $this->templateDir = realpath($directory);
+        }else{
+            $this->templateDir .= trim(strtolower($directory), '/');
+        }
+        // Make Directory If Not Exists
         if(!Directory::make($this->templateDir)) throw new RuntimeException("Failed to Create Template Directory: {$this->templateDir}");
         return;
     }
@@ -88,7 +99,12 @@ class Template
      */
     protected function addCacheDir(string $directory): void
     {
-        $this->cacheDir .= '/'.trim(strtolower($directory), '/');
+        if(realpath($directory)){
+            $this->cacheDir = realpath($directory);
+        }else{
+            $this->cacheDir .= trim(strtolower($directory), '/');
+        }
+        // Make Directory If Not Exists
         if(!Directory::make($this->cacheDir)) throw new RuntimeException("Failed to Create Template Directory: {$this->cacheDir}");
         return;
     }
@@ -139,7 +155,7 @@ class Template
         $ch = new File($this->cacheDir.'/.htaccess');
         if(!$ch->exists()) $ch->write("Deny from all");
 
-        // Tempale & Cache File Path
+        // Template & Cache File Path
         $sourceFile = "{$this->templateDir}/{$view}.tpl.php";
         $cacheFile = $this->cacheDir . '/' . md5($sourceFile) . '-' . filemtime($sourceFile) . '.cache.php';
 
@@ -152,18 +168,13 @@ class Template
         if(!$tpl->exists()) throw new RuntimeException("Template file not found: {$sourceFile}");
 
         // Read source to determine extends + dependencies
-        $source = $tpl->read();
-
-        // Remove PHP Scripts if Exist
-        $source = preg_replace('/<\?(php)?[\s\S]*?\?>/i', '', $source);
-        $source = preg_replace('/<\?(=)?[\s\S]*?\?>/i', '', $source);
-        $source = "<?php\n// Deny Direct Access\ndefined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');\n?>{$source}";
+        $source = $tpl->read(); ////////////////////////////
 
         [$parent, $deps] = $this->collectDependencies($source);
 
         // Recompile Cache Template if Source File Modified
         if($this->needsRecompile($sourceFile, $cacheFile, $deps)){
-            $compiled = $this->compileTemplate($source, isChild: (bool) $parent);
+            $compiled = $this->compile($source, isChild: (bool) $parent);
             $cptl->write($compiled);
         }
 
@@ -251,7 +262,7 @@ class Template
 
         $parentCache = $this->cacheDir . '/' . md5($parentFile) . '.cache.php';
         if ($this->needsRecompile($parentFile, $parentCache, $deps)) {
-            $compiled = $this->compileTemplate($parentSource, isChild: false); // parent layout => not a child
+            $compiled = $this->compile($parentSource, isChild: false); // parent layout => not a child
             file_put_contents($parentCache, $compiled);
         }
 
@@ -269,9 +280,11 @@ class Template
     }
 
     /**
-     * Convert template syntax to PHP. If $isChild is true, compile block tags to capture child content.
+     * Compile Template
+     * @param string $template Template String Format
+     * @return string
      */
-    protected function compileTemplate(string $content, bool $isChild): string
+    protected function compile(string $content, bool $isChild): string
     {
         // Child blocks: capture content for later merging in parent
         if ($isChild) {
@@ -389,9 +402,6 @@ class Template
             $parent = $m[1];
         }
         $includes = [];
-        // if (preg_match_all('/\{\%\s*include\s+[\'\"](.+?)[\'\"]\s*\%\}/', $source, $mm)) {
-        //     $includes = $mm[1];
-        // }
         if (preg_match_all('/\{\%\s*include\s*[\'"](.+?)[\'"]\s*\%\}/', $source, $mm)) {
             $includes = array_map(function ($file) {
                 if (!str_ends_with($file, '.tpl.php')) {

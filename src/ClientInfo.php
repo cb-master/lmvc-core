@@ -205,13 +205,10 @@ class ClientInfo
                 $ipList = explode(',', $_SERVER[$key]);
                 foreach ($ipList as $ip) {
                     $ip = trim($ip);
-                    if (filter_var($ip)) {
-                        return $ip;
-                    }
+                    if(filter_var($ip)) return $ip;
                 }
             }
         }
-
         return 'Unknown';
     }
 }

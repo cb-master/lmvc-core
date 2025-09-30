@@ -202,7 +202,7 @@ class Config
     {
         $content = "[\n";
         foreach($array as $key => $value){
-            $comment = ucfirst((string) $key);
+            $comment = ucwords((string) str_replace('.', ' ', $key));
             if(is_array($value)){
                 $content .= str_repeat(' ', $spaces)."// {$comment}\n" . str_repeat(' ', $spaces) . "'{$key}' => " . trim(self::allign($value, $spaces + 4), ';') . ",\n\n";
             }else{
