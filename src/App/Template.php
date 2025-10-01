@@ -40,14 +40,12 @@ class Template
     private const PARENT_PLACEHOLDER = "\x00__PARENT_BLOCK__\x00";
     
     /* ------------------------- Public API ------------------------- */
-    public function __construct(array $args)
+    public function __construct()
     {
         // Template/Cache Directory
         $this->templateDir = Config::get('app', 'template.dir', APP_PATH . '/lf-templates/');
         $this->cacheDir = Config::get('app', 'template.cache', APP_PATH . '/lf-cache/');
-
-        // Assign Vars
-        $this->vars = array_merge($this->vars, $args);
+        
         // Add Default Config Data
         $this->vars['app_info'] = Config::get('app');
         // Add Client Info

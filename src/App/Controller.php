@@ -28,10 +28,8 @@ Class Controller
     protected array $vars = [];
 
     // Initiate Controller & Assign Controller Vars
-    public function __construct(array $args)
+    public function __construct()
     {
-        // Assign Vars
-        $this->vars = array_merge($this->vars, $args);
         // Add Default Config Data
         $this->vars['app_info'] = Config::get('app');
         $this->vars['client_info'] = new ClientInfo();

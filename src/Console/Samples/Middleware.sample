@@ -20,5 +20,25 @@ class {{NAME}}
 {
     public function __construct(){}
 
-    public function handle(array $args){}
+    /**
+     * @param \Closure $next. $next will bypass to controller if called
+     * @param ...$params Dynamic Parameters
+     */
+    public function handle(\Closure $next, ...$params){
+        // Start Code From Here....
+
+
+        return $next();
+    }
+
+    public function terminate(string $response, ...$params): string
+    {
+        // After controller
+        // Write Code From Here ......
+
+        
+
+        // You can modify the response if needed
+        return $response;
+    }
 }
