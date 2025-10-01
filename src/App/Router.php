@@ -22,28 +22,26 @@ class Router
     private static array $globalBefore = [];
     private static array $globalAfter = [];
     private static array $middlewareGroups = [];
-    private static string $groupPrefix = '';
+    // private static string $groupPrefix = '';
     private static array $groupMiddlewares = [];
     private static array $namedRoutes = [];
+    private static $fallback = null;
+    private static array $groupStack = [];
+    private static array $groupFallbacks = [];
+    private static ?string $lastMethod = null;
+    private static ?string $lastUri    = null;
 
     ################################################################
     /* ------------------- ROUTE REGISTRATION ------------------- */
     ################################################################
 
-    public static function name(string $name): self
+    public function name(string $name): self
     {
-        $lastMethod = array_key_last(self::$routes);
-        if ($lastMethod !== null) {
-            $lastRoute = array_key_last(self::$routes[$lastMethod]);
-            if ($lastRoute !== null) {
-                self::$routes[$lastMethod][$lastRoute]['name'] = $name;
-                self::$namedRoutes[$name] = [
-                    'uri'    => $lastRoute,
-                    'method' => $lastMethod
-                ];
-            }
+        if (self::$lastMethod && self::$lastUri) {
+            self::$routes[self::$lastMethod][self::$lastUri]['name'] = $name;
+            self::$namedRoutes[$name] = [self::$lastMethod, self::$lastUri];
         }
-        return new self;
+        return $this;
     }
 
     public static function url(string $name, array $params = [], bool $absolute = false): string
@@ -78,6 +76,9 @@ class Router
     {
         $slug = self::groupedUri($uri);
         self::$routes['GET'][$slug] = self::makeRoute($callback);
+        // track last registered route
+        self::$lastMethod = 'GET';
+        self::$lastUri    = $slug;
         return new self;
     }
 
@@ -91,6 +92,9 @@ class Router
     {
         $slug = self::groupedUri($uri);
         self::$routes['POST'][$slug] = self::makeRoute($callback);
+        // track last registered route
+        self::$lastMethod = 'POST';
+        self::$lastUri    = $slug;
         return new self;
     }
 
@@ -104,6 +108,9 @@ class Router
     {
         $slug = self::groupedUri($uri);
         self::$routes['PUT'][$slug] = self::makeRoute($callback);
+        // track last registered route
+        self::$lastMethod = 'PUT';
+        self::$lastUri    = $slug;
         return new self;
     }
 
@@ -117,6 +124,9 @@ class Router
     {
         $slug = self::groupedUri($uri);
         self::$routes['PATCH'][$slug] = self::makeRoute($callback);
+        // track last registered route
+        self::$lastMethod = 'PATCH';
+        self::$lastUri    = $slug;
         return new self;
     }
 
@@ -130,6 +140,9 @@ class Router
     {
         $slug = self::groupedUri($uri);
         self::$routes['DELETE'][$slug] = self::makeRoute($callback);
+        // track last registered route
+        self::$lastMethod = 'DELETE';
+        self::$lastUri    = $slug;
         return new self;
     }
 
@@ -143,6 +156,9 @@ class Router
     {
         $slug = self::groupedUri($uri);
         self::$routes['OPTIONS'][$slug] = self::makeRoute($callback);
+        // track last registered route
+        self::$lastMethod = 'OPTIONS';
+        self::$lastUri    = $slug;
         return new self;
     }
 
@@ -156,6 +172,9 @@ class Router
     {
         $slug = self::groupedUri($uri);
         self::$routes['HEAD'][$slug] = self::makeRoute($callback);
+        // track last registered route
+        self::$lastMethod = 'HEAD';
+        self::$lastUri    = $slug;
         return new self;
     }
 
@@ -168,19 +187,47 @@ class Router
      */
     public static function group(string $prefix, callable $callback, array $middlewares = []): self
     {
-        $previousPrefix = self::$groupPrefix;
+        // // Add Prefix for Group Fallback
+        // self::$groupStack[] = $prefix;
+
+        // // Get Previous Prefix & Middlewares
+        // $previousPrefix = self::$groupPrefix;
+        // $previousMiddlewares = self::$groupMiddlewares;
+
+        // self::$groupPrefix .= $prefix;
+        // self::$groupMiddlewares = array_merge(
+        //     self::$groupMiddlewares,
+        //     self::expandGroups($middlewares)
+        // );
+
+        // $callback(new self);
+
+        // // Pop Group Fallback
+        // array_pop(self::$groupStack);
+        // // Reset to Previous Prefix & Middlewares
+        // self::$groupPrefix = $previousPrefix;
+        // self::$groupMiddlewares = $previousMiddlewares;
+        // return new self;
+
+        // push normalized prefix fragment onto stack (ensures leading slash, no trailing)
+        self::$groupStack[] = self::normalize($prefix);
+
+        // Get previous middlewares
         $previousMiddlewares = self::$groupMiddlewares;
 
-        self::$groupPrefix .= $prefix;
+        // merge group middlewares
         self::$groupMiddlewares = array_merge(
             self::$groupMiddlewares,
             self::expandGroups($middlewares)
         );
 
+        // call user callback (allows Router::get() calls inside)
         $callback(new self);
 
-        self::$groupPrefix = $previousPrefix;
+        // Pop prefix & restore middlewares
+        array_pop(self::$groupStack);
         self::$groupMiddlewares = $previousMiddlewares;
+
         return new self;
     }
 
@@ -203,17 +250,10 @@ class Router
      */
     public function middleware(array|string $middlewares): self
     {
-        $middlewares = self::expandGroups((array)$middlewares);
-
-        $lastMethod = array_key_last(self::$routes);
-        if ($lastMethod !== null) {
-            $lastRoute = array_key_last(self::$routes[$lastMethod]);
-            if ($lastRoute !== null) {
-                self::$routes[$lastMethod][$lastRoute]['middlewares'] = array_merge(
-                    self::$routes[$lastMethod][$lastRoute]['middlewares'],
-                    $middlewares
-                );
-            }
+        if (!is_array($middlewares)) $middlewares = [$middlewares];
+        if (self::$lastMethod && self::$lastUri) {
+            self::$routes[self::$lastMethod][self::$lastUri]['middlewares'] =
+                array_merge(self::$routes[self::$lastMethod][self::$lastUri]['middlewares'], $middlewares);
         }
         return $this;
     }
@@ -223,19 +263,12 @@ class Router
      * @param array|string $middlewares Midleware Name. Example: Router::middleware(['InitiateDB']) or Router::middleware('InitiateDB'])
      * @return self
      */
-    public function after(array|string $middlewares): self
+    public function afterware(array|string $middlewares): self
     {
-        $middlewares = self::expandGroups((array)$middlewares);
-
-        $lastMethod = array_key_last(self::$routes);
-        if ($lastMethod !== null) {
-            $lastRoute = array_key_last(self::$routes[$lastMethod]);
-            if ($lastRoute !== null) {
-                self::$routes[$lastMethod][$lastRoute]['after'] = array_merge(
-                    self::$routes[$lastMethod][$lastRoute]['after'],
-                    $middlewares
-                );
-            }
+        if (!is_array($middlewares)) $middlewares = [$middlewares];
+        if (self::$lastMethod && self::$lastUri) {
+            self::$routes[self::$lastMethod][self::$lastUri]['after'] =
+                array_merge(self::$routes[self::$lastMethod][self::$lastUri]['after'], $middlewares);
         }
         return $this;
     }
@@ -268,6 +301,31 @@ class Router
             foreach (self::expandGroups([$mw]) as $expanded) {
                 self::$globalAfter[] = ['name' => $expanded, 'priority' => $priority];
             }
+        }
+        return new self;
+    }
+
+    /**
+     * Register Fallback Route for 404
+     * @param callable|array|string $callback
+     * @return self
+     */
+    public static function fallback(callable|array|string $callback): self
+    {
+        self::$fallback = $callback;
+        return new self;
+    }
+
+    /**
+     * Define fallback for current group
+     * @param callable|array|string $callback
+     * @return self
+     */
+    public static function groupFallback(callable|array|string $callback): self
+    {
+        if (!empty(self::$groupStack)) {
+            $prefix = implode('', self::$groupStack);
+            self::$groupFallbacks[$prefix] = $callback;
         }
         return new self;
     }
@@ -362,8 +420,22 @@ class Router
             }
         }
 
+        // Try group-specific fallbacks
+        foreach (array_reverse(self::$groupFallbacks) as $prefix => $callback) {
+            if (str_starts_with($path, $prefix)) {
+                self::executeCallback($callback, []);
+                return;
+            }
+        }
+
+        // Try global fallback
+        if (self::$fallback) {
+            self::executeCallback(self::$fallback, []);
+            return;
+        }
+
         http_response_code(404);
-        echo "404 - Not Found";
+        require_once __DIR__.'/404.php';
     }
 
     #######################################################
@@ -522,13 +594,20 @@ class Router
         if (is_string($callback)) {
             [$controller, $method] = explode('@', $callback);
             $controller = "CBM\\App\\Controller\\{$controller}";
-            if (class_exists($controller)) {
-                call_user_func_array([new $controller(), $method], $params);
-                return;
+
+            if(!class_exists($controller) || !method_exists($controller, $method)){
+                throw new \Exception('Invalid Route Callback: '.print_r($callback, true), 500);
             }
+
+            call_user_func_array([new $controller(), $method], $params);
+            return;
         } elseif (is_array($callback)) {
             [$controller, $method] = $callback;
             $controller = "CBM\\App\\Controller\\{$controller}";
+            // Check Controller & Methods
+            if(!class_exists($controller) || !method_exists($controller, $method)){
+                throw new \Exception('Invalid Route Callback: '.print_r($callback, true), 500);
+            }
             if (class_exists($controller)) {
                 call_user_func_array([new $controller(), $method], $params);
                 return;
@@ -573,7 +652,8 @@ class Router
 
     private static function groupedUri(string $uri): string
     {
-        $prefix = self::$groupPrefix;
+        // join normalized stack fragments (each fragment starts with '/')
+        $prefix = implode('', self::$groupStack); // e.g. '/admin/shop'
         $full   = rtrim($prefix, '/') . '/' . ltrim($uri, '/');
 
         return self::normalize($full);
