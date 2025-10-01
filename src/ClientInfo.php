@@ -23,9 +23,9 @@ class ClientInfo
     protected string $userAgent;
 
     /**
-     * @var string $ip
+     * @var ?string $ip
      */
-    protected string $ip;
+    protected ?string $ip;
 
     public function __construct()
     {
@@ -42,9 +42,9 @@ class ClientInfo
     }
 
     /**
-     * @return string Client IP
+     * @return ?string Client IP
      */
-    public function ip(): string
+    public function ip(): ?string
     {
         return $this->ip;
     }
@@ -190,8 +190,9 @@ class ClientInfo
 
     /**
      * @return string Detect Client IP
+     * @return ?string IPv4/IPv6 on Success and null of Failure
      */
-    protected function detectIp(): string
+    protected function detectIp(): ?string
     {
         foreach ([
             'HTTP_CLIENT_IP',
@@ -202,16 +203,14 @@ class ClientInfo
             'REMOTE_ADDR'
         ] as $key) {
             if (!empty($_SERVER[$key])) {
-                $ipList = explode(',', $_SERVER[$key]);
-                foreach ($ipList as $ip) {
+                $ips = explode(',', $_SERVER[$key]);
+                foreach($ips as $ip){
                     $ip = trim($ip);
-                    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_RES_RANGE)) {
-                        return $ip;
-                    }
+                    if(filter_var($ip, FILTER_VALIDATE_IP, [FILTER_FLAG_IPV4, FILTER_FLAG_IPV6])) return $ip;
                 }
             }
         }
 
-        return 'Unknown';
+        return null;
     }
 }
