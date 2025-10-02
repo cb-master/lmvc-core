@@ -35,3 +35,25 @@ add_filter('template.asset', function(string $file): string {
     $file = trim($file, '/');
     return apply_filter('app.uri') . "resource/{$file}";
 });
+
+/**
+ * App Logo
+ * @param ?string $option_key opt_ken column value in Database options Table
+ * @return string
+ */
+add_filter('app.logo', function(?string $option_key = null): string {
+    $name = option($option_key ?? '') ?: null;
+    $logo = $name ?: 'logo.png';
+    return apply_filter('app.host') . "resource/img/{$logo}";
+});
+
+/**
+ * App Icon
+ * @param ?string $option_key opt_ken column value in Database options Table
+ * @return string
+ */
+add_filter('app.icon', function(?string $option_key = null): string {
+    $name = option($option_key ?? '') ?: null;
+    $icon = $name ?: 'favicon.ico';
+    return apply_filter('app.host') . "resource/img/{$icon}";
+});
