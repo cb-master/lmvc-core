@@ -51,7 +51,7 @@ class Router
             throw new \Exception("Route name '{$name}' not defined.");
         }
 
-        $uri = self::$namedRoutes[$name]['uri'];
+        $uri = self::$namedRoutes[$name][1];
 
         // Replace {param} placeholders
         foreach ($params as $key => $value) {
