@@ -526,9 +526,9 @@ class Router
 
         if ($isCli) {
             // CLI MODE → print console table
-            echo str_repeat("=", 100) . "\n";
-            echo sprintf("%-8s %-30s %-30s %-20s\n", "METHOD", "ROUTE", "NAME", "CALLBACK", "PIPELINE");
-            echo str_repeat("-", 100) . "\n";
+            echo str_repeat("=", 160) . "\n";
+            echo sprintf("%-8s %-30s %-20s %-50s %-30s\n", "METHOD", "ROUTE", "NAME", "CALLBACK", "PIPELINE");
+            echo str_repeat("-", 160) . "\n";
 
             foreach (self::$routes as $method => $routes) {
                 foreach ($routes as $uri => $data) {
@@ -538,7 +538,7 @@ class Router
 
                     $name = $data['name'] ?: '.';
                     $pipeline = implode(' -> ', self::buildPipeline($data));
-                    echo sprintf("%-8s %-30s %-30s %-20s\n", $method, $uri, $name, $callback, $pipeline);
+                    echo sprintf("%-8s %-30s %-20s %-50s %-30s\n", $method, $uri, $name, $callback, $pipeline);
                 }
             }
             echo str_repeat("=", 100) . "\n";
