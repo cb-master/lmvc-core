@@ -15,6 +15,7 @@ namespace CBM\Core\App;
 defined('APP_PATH') || http_response_code(403) . die('403 Direct Access Denied!');
 
 use CBM\Core\Uri;
+use InvalidArgumentException;
 
 class Router
 {
@@ -384,12 +385,15 @@ class Router
                     if (isset($middlewares[$index])) {
                         [$name, $params] = self::parseMiddleware($middlewares[$index], $matches);
                         $middlewareClass = "CBM\\App\\Middleware\\{$name}";
-                        if (class_exists($middlewareClass)) {
-                            $instance = new $middlewareClass();
-                            if (method_exists($instance, 'handle')) {
-                                return $instance->handle(fn() => $runner($index + 1), ...$params);
-                            }
+
+                        // Throw Exception if Middleware Doesn't Exists
+                        if(!class_exists($middlewareClass)) throw new InvalidArgumentException("Invalid Middleware Ditected: {$middlewareClass}");
+
+                        $instance = new $middlewareClass();
+                        if (method_exists($instance, 'handle')) {
+                            return $instance->handle(fn() => $runner($index + 1), ...$params);
                         }
+
                         return;
                     } else {
                         self::executeCallback($callback, $matches);
@@ -522,9 +526,9 @@ class Router
 
         if ($isCli) {
             // CLI MODE → print console table
-            echo str_repeat("=", 100) . "\n";
-            echo sprintf("%-8s %-30s %-30s %-20s\n", "METHOD", "ROUTE", "NAME", "CALLBACK", "PIPELINE");
-            echo str_repeat("-", 100) . "\n";
+            echo str_repeat("=", 160) . "\n";
+            echo sprintf("%-8s %-30s %-20s %-50s %-30s\n", "METHOD", "ROUTE", "NAME", "CALLBACK", "PIPELINE");
+            echo str_repeat("-", 160) . "\n";
 
             foreach (self::$routes as $method => $routes) {
                 foreach ($routes as $uri => $data) {
@@ -534,7 +538,7 @@ class Router
 
                     $name = $data['name'] ?: '.';
                     $pipeline = implode(' -> ', self::buildPipeline($data));
-                    echo sprintf("%-8s %-30s %-30s %-20s\n", $method, $uri, $name, $callback, $pipeline);
+                    echo sprintf("%-8s %-30s %-20s %-50s %-30s\n", $method, $uri, $name, $callback, $pipeline);
                 }
             }
             echo str_repeat("=", 100) . "\n";
