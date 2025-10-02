@@ -67,6 +67,7 @@ class Template
             'replace'  => function ($v, string $search, string $replace) {
                 return str_replace($search, $replace, (string)$v);
             },
+            'named'    => fn(string $name, array $params = [])  => named($name, $params, true),
         ];
     }
 

@@ -13,7 +13,7 @@ declare(strict_types=1);
 // Deny Direct Access
 defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
-use CBM\Core\{Filter, Uri, Option};
+use CBM\Core\{App\Router, Filter, Uri, Option};
  
 // Dump Data & Die
 /**
@@ -102,4 +102,13 @@ function option(string $key): ?string
 function host(): string
 {
     return option('app_host') ?: Uri::base();
+}
+
+/**
+ * Get Named Route
+ * @return string
+ */
+function named(string $name, array $params = [], bool $url = false)
+{
+    return Router::url($name, $params, $url);
 }
