@@ -13,13 +13,8 @@ declare(strict_types=1);
 // Deny Direct Access
 defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
-use CBM\Core\Uri;
-
 // App Host
-add_filter('app.host', function(): string { return option('app_host') ?: Uri::base(); });
-
-// Panel Home
-add_filter('app.panel', function(): string { return option('app_host') ?: Uri::base(); });
+add_filter('app.host', function(): string { return host(); });
 
 // Asset Path
 /**
