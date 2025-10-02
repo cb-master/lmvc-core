@@ -15,6 +15,7 @@ namespace CBM\Core\App;
 defined('APP_PATH') || http_response_code(403) . die('403 Direct Access Denied!');
 
 use CBM\Core\Uri;
+use InvalidArgumentException;
 
 class Router
 {
@@ -384,12 +385,15 @@ class Router
                     if (isset($middlewares[$index])) {
                         [$name, $params] = self::parseMiddleware($middlewares[$index], $matches);
                         $middlewareClass = "CBM\\App\\Middleware\\{$name}";
-                        if (class_exists($middlewareClass)) {
-                            $instance = new $middlewareClass();
-                            if (method_exists($instance, 'handle')) {
-                                return $instance->handle(fn() => $runner($index + 1), ...$params);
-                            }
+
+                        // Throw Exception if Middleware Doesn't Exists
+                        if(!class_exists($middlewareClass)) throw new InvalidArgumentException("Invalid Middleware Ditected: {$name}");
+
+                        $instance = new $middlewareClass();
+                        if (method_exists($instance, 'handle')) {
+                            return $instance->handle(fn() => $runner($index + 1), ...$params);
                         }
+
                         return;
                     } else {
                         self::executeCallback($callback, $matches);
