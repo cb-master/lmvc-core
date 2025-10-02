@@ -13,13 +13,8 @@ declare(strict_types=1);
 // Deny Direct Access
 defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
-use CBM\Core\Uri;
-
-// App Uri
-add_filter('app.uri', function(): string { return option('app_host') ?: Uri::base(); });
-
-// Home Page Uri
-add_filter('app.home', function(): string { return option('app_host') ?: Uri::base(); });
+// App Host
+add_filter('app.host', function(): string { return host(); });
 
 // Asset Path
 /**
@@ -33,5 +28,27 @@ add_filter('template.asset', function(string $file): string {
         return $file;
     }
     $file = trim($file, '/');
-    return apply_filter('app.uri') . "resource/{$file}";
+    return apply_filter('app.host') . "resource/{$file}";
+});
+
+/**
+ * App Logo
+ * @param ?string $option_key opt_ken column value in Database options Table
+ * @return string
+ */
+add_filter('app.logo', function(?string $option_key = null): string {
+    $name = option($option_key ?? '') ?: null;
+    $logo = $name ?: 'logo.png';
+    return apply_filter('app.host') . "resource/img/{$logo}";
+});
+
+/**
+ * App Icon
+ * @param ?string $option_key opt_ken column value in Database options Table
+ * @return string
+ */
+add_filter('app.icon', function(?string $option_key = null): string {
+    $name = option($option_key ?? '') ?: null;
+    $icon = $name ?: 'favicon.ico';
+    return apply_filter('app.host') . "resource/img/{$icon}";
 });

@@ -94,3 +94,12 @@ function option(string $key): ?string
 {
     return Option::get($key);
 }
+
+/**
+ * Host Path
+ * @return string Return Host Path. Example: http://example.com or http://example.com/path if app hosted in path
+ */
+function host(): string
+{
+    return option('app_host') ?: Uri::base();
+}
