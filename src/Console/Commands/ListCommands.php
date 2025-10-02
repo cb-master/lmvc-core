@@ -34,21 +34,14 @@ class ListCommands Extends Command
         LIST;
 
         // CONTROLLERS
-        echo <<<CONTROLLERS
-        ## CONTROLLERS
-            Make    :   php laika make:controller:native <name> <view_name::optional>
-            Rename  :   php laika rename:controller:native <old_name> <new_name>
-            Delete  :   php laika pop:controller:native <name>
-            List    :   php laika list:controller:native <sub_path::optional>\n\n
-        CONTROLLERS;
         // TEMPLATE CONTROLLERS
-        echo <<<TEMPLATECONTROLLERS
+        echo <<<CONTROLLERS
         ## CONTROLLERS
             Make    :   php laika make:controller <name> <view_name::optional>
             Rename  :   php laika rename:controller <old_name> <new_name>
             Delete  :   php laika pop:controller <name>
             List    :   php laika list:controller <sub_path::optional>\n\n
-        TEMPLATECONTROLLERS;
+        CONTROLLERS;
         // MIDDLEWARES
         echo <<<MIDDLEWARES
         ## MIDDLEWARES

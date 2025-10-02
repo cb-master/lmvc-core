@@ -64,7 +64,7 @@ class Make Extends Command
         $content = file_get_contents(__DIR__ . '/../../Samples/View.sample');
 
         // Replace Placeholders
-        $content = str_replace('{{NAME}}',$parts['name'], $content);
+        // $content = str_replace('{{NAME}}',$parts['name'], $content);
 
         if(file_put_contents($file, $content) === false){
             $this->error("Failed to Create View: {$file}");

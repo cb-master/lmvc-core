@@ -118,5 +118,6 @@ class Rename Extends Command
         
         
         $this->info("Controller Renamed Successfully: '{$old}'->'{$new}'");
+        return;
     }
 }

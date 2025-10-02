@@ -155,6 +155,10 @@ class Template
 
         // Template & Cache File Path
         $sourceFile = "{$this->templateDir}/{$view}.tpl.php";
+
+        // Throw RuntimeException if View File Does not Exists
+        if(!is_file($sourceFile)) throw new RuntimeException("Template File Not Found: '{$view}'");
+
         $cacheFile = $this->cacheDir . '/' . md5($sourceFile) . '-' . filemtime($sourceFile) . '.cache.php';
 
         // Make Template File Object

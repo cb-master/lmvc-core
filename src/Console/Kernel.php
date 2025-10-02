@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace CBM\Core\Console;
 
 // Deny Direct Access
-defined('BASE_PATH') || http_response_code(403).die('403 Direct Access Denied!');
+defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
 class Kernel
 {
@@ -57,16 +57,11 @@ class Kernel
     protected function registerCommands()
     {
         $this->commands = [
-            /* Native or Old Controller Commands */
-            'make:controller:native'        =>  \CBM\Core\Console\Commands\Controller\Make::class,
-            'rename:controller:native'      =>  \CBM\Core\Console\Commands\Controller\Rename::class,
-            'pop:controller:native'         =>  \CBM\Core\Console\Commands\Controller\Pop::class,
-            'list:controller:native'        =>  \CBM\Core\Console\Commands\Controller\Lists::class,
             /* Template Controller Commands */
-            'make:controller'       =>  \CBM\Core\Console\Commands\TemplateController\Make::class,
-            'rename:controller'     =>  \CBM\Core\Console\Commands\TemplateController\Rename::class,
-            'pop:controller'        =>  \CBM\Core\Console\Commands\TemplateController\Pop::class,
-            'list:controller'       =>  \CBM\Core\Console\Commands\TemplateController\Lists::class,
+            'make:controller'       =>  \CBM\Core\Console\Commands\Controller\Make::class,
+            'rename:controller'     =>  \CBM\Core\Console\Commands\Controller\Rename::class,
+            'pop:controller'        =>  \CBM\Core\Console\Commands\Controller\Pop::class,
+            'list:controller'       =>  \CBM\Core\Console\Commands\Controller\Lists::class,
             /* Middleware Commands */
             'make:middleware'       =>  \CBM\Core\Console\Commands\Middleware\Make::class,
             'rename:middleware'     =>  \CBM\Core\Console\Commands\Middleware\Rename::class,
@@ -82,15 +77,12 @@ class Kernel
             'rename:view'           =>  \CBM\Core\Console\Commands\View\Rename::class,
             'pop:view'              =>  \CBM\Core\Console\Commands\View\Pop::class,
             'list:view'             =>  \CBM\Core\Console\Commands\View\Lists::class,
-            /* Template Commands */
-            'make:template'         =>  \CBM\Core\Console\Commands\Template\Make::class,
-            'rename:template'       =>  \CBM\Core\Console\Commands\Template\Rename::class,
-            'pop:template'          =>  \CBM\Core\Console\Commands\Template\Pop::class,
-            'list:template'         =>  \CBM\Core\Console\Commands\Template\Lists::class,
             /* Other Commands */
             'help'                  =>  \CBM\Core\Console\Commands\ListCommands::class,
             /* Migrate */
             'migrate'               =>  \CBM\Core\Console\Commands\Migrate::class,
+            /* Route */
+            'list:route'            =>  \CBM\Core\Console\Commands\Route\Lists::class,
             /* Secret Key */
             'generate:secret'       =>  \CBM\Core\Console\Commands\Secret\Generate::class,
             'pop:secret'            =>  \CBM\Core\Console\Commands\Secret\Pop::class,

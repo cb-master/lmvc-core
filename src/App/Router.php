@@ -500,14 +500,13 @@ class Router
                         ? "{$num}. {$step}\n"
                         : "{$num}. {$step}<br>";
                 }
-
                 return;
             }
         }
-
         echo $isCli
             ? "No Route Matches {$method} {$uri}\n"
             : "No Route Matches {$method} {$uri}<br>";
+        return;
     }
 
     public static function inspectAll(): void
@@ -522,21 +521,23 @@ class Router
         }
 
         if ($isCli) {
-            // CLI output
-            foreach (self::$routes as $method => $routes) {
-                foreach ($routes as $route => $data) {
-                    $callbackInfo = self::callbackToString($data['callback']);
-                    $pipeline = self::buildPipeline($data);
+            // CLI MODE → print console table
+            echo str_repeat("=", 100) . "\n";
+            echo sprintf("%-8s %-30s %-30s %-20s\n", "METHOD", "ROUTE", "NAME", "CALLBACK", "PIPELINE");
+            echo str_repeat("-", 100) . "\n";
 
-                    echo "=== {$method} {$route} ===\n";
-                    echo "Action: {$callbackInfo}\n";
-                    foreach ($pipeline as $i => $step) {
-                        $num = $i + 1;
-                        echo "  {$num}. {$step}\n";
-                    }
-                    echo "\n";
+            foreach (self::$routes as $method => $routes) {
+                foreach ($routes as $uri => $data) {
+                    $callback = is_array($data['callback'])
+                        ? implode('@', $data['callback'])
+                        : (is_string($data['callback']) ? $data['callback'] : 'Closure');
+
+                    $name = $data['name'] ?: '.';
+                    $pipeline = implode(' -> ', self::buildPipeline($data));
+                    echo sprintf("%-8s %-30s %-30s %-20s\n", $method, $uri, $name, $callback, $pipeline);
                 }
             }
+            echo str_repeat("=", 100) . "\n";
         } else {
             // Browser output: HTML table
             echo '<style>
@@ -554,7 +555,7 @@ class Router
                         <th>Method</th>
                         <th>Route</th>
                         <th>Name</th>
-                        <th>Action</th>
+                        <th>Callback</th>
                         <th>Pipeline</th>
                     </tr>
                 </thead>
