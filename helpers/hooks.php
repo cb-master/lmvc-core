@@ -13,7 +13,7 @@ declare(strict_types=1);
 // Deny Direct Access
 defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
-use CBM\Core\Uri;
+use CBM\Core\{Uri, Date, Http\Request};
 
 // App Host
 add_filter('app.host', function(): string { return host(); });
@@ -67,3 +67,36 @@ add_filter('uri.make', function(string|array $slug = '', array $queries = []): s
     $slug = implode('/', $slug);
     return Uri::build($slug, $queries);
 });
+
+####################################################################
+/*------------------------- DATE FILTERS -------------------------*/
+####################################################################
+// Date Object
+add_filter('date', function(string $time = 'now'): object {
+    $format = option('time.format', 'Y-M-d H:i:s');
+    $timezone = option('time.zone', 'Europe/London');
+    return new Date($time, $format, $timezone);
+});
+
+#####################################################################
+/*------------------------ REQUEST FILTERS ------------------------*/
+#####################################################################
+// Get Request Input Value
+add_filter('request.input', function(string $key, mixed $default = null): string {
+    return Request::input($key, $default);
+});
+
+####################################################################
+/*------------------------- PAGE FILTERS -------------------------*/
+####################################################################
+// Page Number
+add_filter('page.number', function(): int {
+    $number = (int) apply_filter('request.input', 'page', 1);
+    return $number < 1 ? 1 : $number;
+});
+
+// Next Page Number
+add_filter('page.next', function(){ return Uri::incrementQuery(); });
+
+// Previous Page Number
+add_filter('page.previous', function(){ return Uri::decrementQuery(); });
