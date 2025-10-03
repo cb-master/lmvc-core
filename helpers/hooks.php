@@ -99,7 +99,7 @@ add_filter('request.is', function(string $method): bool {
             return Request::isPost();
             break;
         case 'get':
-            return Request::isPost();
+            return Request::isGet();
             break;
         case 'ajax':
             return Request::isAjax();
