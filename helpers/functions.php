@@ -101,7 +101,7 @@ function option(string $key): ?string
  */
 function host(): string
 {
-    return option('app_host') ?: Uri::base();
+    return option('app.host') ?: Uri::base();
 }
 
 /**
