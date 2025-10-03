@@ -86,6 +86,30 @@ add_filter('request.input', function(string $key, mixed $default = null): string
     return Request::input($key, $default);
 });
 
+// Get All Request Input Values
+add_filter('request.all', function(): array {
+    return Request::all();
+});
+
+// Check Method Request is Post/Get/Ajax
+add_filter('request.is', function(string $method): bool {
+    $method = strtolower($method);
+    switch ($method) {
+        case 'post':
+            return Request::isPost();
+            break;
+        case 'get':
+            return Request::isPost();
+            break;
+        case 'ajax':
+            return Request::isAjax();
+            break;        
+        default:
+            return false;
+            break;
+    }
+});
+
 ####################################################################
 /*------------------------- PAGE FILTERS -------------------------*/
 ####################################################################
