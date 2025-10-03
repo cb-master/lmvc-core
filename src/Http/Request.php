@@ -115,7 +115,7 @@ class Request
 
     /**
      * Request is GET
-     * @return string
+     * @return bool
      */
     public static function isGet(): bool
     {
