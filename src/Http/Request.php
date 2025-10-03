@@ -19,172 +19,229 @@ defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 class Request
 {
     /**
-     * @var array $get
+     * @property ?object $instance
      */
-    protected array $get;
+    protected static ?object $instance;
 
     /**
-     * @var array $post
+     * @property array $get
      */
-    protected array $post;
+    protected static array $get;
 
     /**
-     * @var array $files
+     * @property array $post
      */
-    protected array $files;
+    protected static array $post;
 
     /**
-     * @var array $server
+     * @property array $files
      */
-    protected array $server;
+    protected static array $files;
 
     /**
-     * @var array $json
+     * @property array $json
      */
-    protected array $json;
+    protected static array $json;
 
     /**
-     * @var string $rawBody
+     * @property string $rawBody
      */
-    protected string $rawBody;
+    protected static string $rawBody;
 
     /**
-     * @var string $method
+     * @property string $method
      */
-    protected string $method;
+    protected static string $method;
 
 
-    public function __construct()
+    private function __construct()
     {
-        $this->server = $_SERVER ?? [];
-        $this->get = $this->purify($_GET ?? []);
-        $this->post = $this->purify($_POST ?? []);
-        $this->files = $_FILES ?? [];
-        $this->rawBody = file_get_contents('php://input');
-        $this->json = $this->purify($this->getJSON());
-        $this->method = $this->detectMethod();
+        self::$get = purify($_GET ?? []);
+        self::$post = purify($_POST ?? []);
+        self::$files = $_FILES ?? [];
+        self::$rawBody = file_get_contents('php://input');
+        self::$json = purify(self::json());
+        self::$method = strtoupper(self::$post['_method'] ?? $_SERVER['REQUEST_METHOD'] ?? 'GET');
     }
 
-    // Detect Request Method
-    protected function detectMethod(): string
+    /**
+     * Get Request Instance
+     * @return static
+     */
+    private static function getInstance(): static
     {
-        if (!empty($this->post['_method'])) {
-            return strtoupper($this->post['_method']);
-        }
-
-        return strtoupper($this->server['REQUEST_METHOD'] ?? 'GET');
+        self::$instance ??= new self();
+        return self::$instance;
     }
 
-    // Get JSON BODY
-    protected function getJSON(): array
+    ##################################################################
+    /*------------------------- PUBLIC API -------------------------*/
+    ##################################################################
+
+    /**
+     * Get Method
+     * @return string
+     */
+    public static function method(): string
     {
-        $contentType = $this->server['CONTENT_TYPE'] ?? '';
+        // Define $instance if Not Defined Yet
+        self::getInstance();
+        return self::$method;
+    }
+
+    /**
+     * Get Header Key Values
+     * @param string $key Key name of headers. Example: 'content-type'
+     * @return ?string
+     */
+    public static function header(string $key): ?string
+    {
+        // Define $instance if Not Defined Yet
+        self::getInstance();
+        $headerKey = 'HTTP_' . strtoupper(str_replace('-', '_', $key));
+        return $_SERVER[$headerKey] ?? null;
+    }
+
+    /**
+     * Request is POST
+     * @return bool
+     */
+    public static function isPost(): bool
+    {
+        // Define $instance if Not Defined Yet
+        self::getInstance();
+        return self::$method === 'POST';
+    }
+
+    /**
+     * Request is GET
+     * @return string
+     */
+    public static function isGet(): bool
+    {
+        // Define $instance if Not Defined Yet
+        self::getInstance();
+        return self::$method === 'GET';
+    }
+
+    /**
+     * Check Request is Ajax
+     * @return bool
+     */
+    public static function isAjax(): bool
+    {
+        // Define $instance if Not Defined Yet
+        self::getInstance();
+        return strtolower(self::header('X-Requested-With')) === 'xmlhttprequest';
+    }
+
+    /**
+     * Get Value From Input Key
+     * @param string $key Key Name of Request
+     * @param mixed $default Default is null if not Key Exists
+     * @return mixed
+     */
+    public static function input(string $key, mixed $default = null): mixed
+    {
+        // Define $instance if Not Defined Yet
+        self::getInstance();
+        return self::$post[$key] ?? self::$get[$key] ?? self::$json[$key] ?? $default;
+    }
+
+    /**
+     * Get All Request Key & Values
+     * @return array
+     */
+    public static function all(): array
+    {
+        // Define $instance if Not Defined Yet
+        self::getInstance();
+        return array_merge(self::$get, self::$post, self::$json);
+    }
+
+    // Get Selected Key Values
+    public static function only(array $keys): array
+    {
+        // Define $instance if Not Defined Yet
+        self::getInstance();
+
+        return array_map(function($key){
+            return self::input($key, null);
+        },$keys);
+    }
+
+    /**
+     * Check Request Key Exist
+     * @param string $key Key Name of Request
+     * @return bool
+     */
+    public static function has(string $key): bool
+    {
+        // Define $instance if Not Defined Yet
+        self::getInstance();
+        return array_key_exists($key, self::$post) || array_key_exists($key, self::$get) || array_key_exists($key, self::$json);
+    }
+
+    /**
+     * Get JSON Body
+     * @return array
+     */
+    public static function json(): array
+    {
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
         if (str_starts_with(strtolower($contentType), 'application/json')) {
-            $decoded = json_decode($this->rawBody, true);
+            $decoded = json_decode(self::$rawBody, true);
             return is_array($decoded) ? $decoded : [];
         }
         return [];
     }
 
-    // Get Method
-    public function method(): string
+    /**
+     * Get Selected Request File or All Request Files
+     * @param ?string $key Key Name of Request File. Null Will Return All Request File Info
+     * @return ?array
+     */
+    public static function file(?string $key = null): ?array
     {
-        return $this->method;
+        // Define $instance if Not Defined Yet
+        self::getInstance();
+        return $key ? (self::$files[$key] ?? []) : self::$files;
     }
 
-    // Request is Post
-    public function isPost(): bool
+    /**
+     * Get JSON String
+     * @return string
+     */
+    public static function raw(): string
     {
-        return $this->method() === 'POST';
+        // Define $instance if Not Defined Yet
+        self::getInstance();
+        return self::$rawBody;
     }
 
-    // Request is Post
-    public function isGet(): bool
-    {
-        return $this->method() === 'GET';
-    }
-
-    // Get Value From Input Key
-    public function input(string $key, mixed $default = null): mixed
-    {
-        return $this->post[$key] ?? $this->get[$key] ?? $this->json[$key] ?? $default;
-    }
-
-    // Get All Request Key & Values
-    public function all(): array
-    {
-        return array_merge($this->get, $this->post, $this->json);
-    }
-
-    // Get Selected Key Values
-    public function only(array $keys): array
-    {
-        // $data = [];
-        return array_map(function($key){
-            return $this->input($key);
-        },$keys);
-    }
-
-    // Check Request Key Exist
-    public function has(string $key): bool
-    {
-        return array_key_exists($key, $this->post) || array_key_exists($key, $this->get) || array_key_exists($key, $this->json);
-    }
-
-    // Get Selected Request File or All Request Files
-    public function file(?string $key = null): ?array
-    {
-        return $key ? $this->files[$key] : $this->files;
-    }
-
-    // Gets Header Key Values
-    public function header(string $key): ?string
-    {
-        $headerKey = 'HTTP_' . strtoupper(str_replace('-', '_', $key));
-        return $this->server[$headerKey] ?? null;
-    }
-
-    // Check Request is Ajax
-    public function isAjax(): bool
-    {
-        return strtolower($this->header('X-Requested-With')) === 'xmlhttprequest';
-    }
-
-    // Get JSON String
-    public function raw(): string
-    {
-        return $this->rawBody;
-    }
-
-    // Purify Input Values
-    public function purify(array $data): array
-    {
-        return array_map(function($val){
-            return is_array($val)
-                ? $this->purify($val)
-                : htmlspecialchars(trim($val), ENT_QUOTES, 'UTF-8');
-        }, $data);
-    }
-
-    // Check Request Keys Are Exist
-    public function validRequestKeys(array $keys): bool
+    /**
+     * Validate Request Keys
+     * @param array $keys Request Keys. Example: ['name', 'password']
+     * @return bool
+     */
+    public static function validRequestKeys(array $keys): bool
     {
         foreach($keys as $key){
-            if(!$this->input($key)){
+            if(!self::input($key)){
                 return false;
             }
         }
         return true;
     }
 
-    // Check If Required Inputs Has Blank Value
     /**
+     * Check If Required Inputs Has Blank Value
      * @param $keys Required Argument. Example: ['username','email','password']
      */
     public function hasBlankInput(array $keys): bool
     {
         foreach($keys as $key){
-            $value = $this->input($key);
+            $value = self::input($key);
             if($value === null || $value === ''){
                 return true;
             }
@@ -197,8 +254,8 @@ class Request
      * @param array $customMessages Optional Argument. Example: ['email.required'=>'Email is Required!']
      * @return array
      */
-    public function validate(array $rules, array $customMessages = []): array
+    public static function validate(array $rules, array $customMessages = []): array
     {
-        return Validator::make($this->all(), $rules, $customMessages);
+        return Validator::make(self::all(), $rules, $customMessages);
     }
 }
