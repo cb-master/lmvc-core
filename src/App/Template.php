@@ -68,7 +68,7 @@ class Template
                 return str_replace($search, $replace, (string)$v);
             },
             'named'    => fn(string $name, array $params = [])  => named($name, $params, true),
-            'date'     => apply_filter('date', 'now'),
+            'date.object'=> apply_filter('date', 'now'),
         ];
     }
 

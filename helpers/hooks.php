@@ -82,7 +82,7 @@ add_filter('date', function(string $time = 'now'): object {
 /*------------------------ REQUEST FILTERS ------------------------*/
 #####################################################################
 // Get Request Input Value
-add_filter('request.input', function(string $key, mixed $default = null): string {
+add_filter('request.input', function(string $key, mixed $default = null): ?string {
     return Request::input($key, $default);
 });
 
