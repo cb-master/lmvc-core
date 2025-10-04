@@ -154,7 +154,8 @@ class Api
      */
     public function json(): string
     {
-        // Set Application/Json Header
+        // Set Application/Json & HTTP Header Response Code
+        Http\Response::code($this->code);
         Http\Response::setHeader(['Content-Type'=>'Application/Json']);
         // Return Result
         return json_encode([
