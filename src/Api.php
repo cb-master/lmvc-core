@@ -154,6 +154,9 @@ class Api
      */
     public function json(): string
     {
+        // Set Application/Json Header
+        Http\Response::setHeader(['Content-Type'=>'Application/Json']);
+        // Return Result
         return json_encode([
             'code'      =>  $this->code,
             'status'    =>  $this->status,
