@@ -35,46 +35,53 @@ class Lists Extends Command
         // Path
         $path = trim($params[0] ?? '', '/');
 
-        // Check Model Name is Valid
+        // Check View Name is Valid
         if($path && !preg_match($this->exp, $path)){
-            // Invalid Model Name
-            $this->error("Invalid Model Path: '{$path}'");
+            // Invalid View Name
+            $this->error("Invalid View Path: '{$path}'");
             return;
         }
 
         // Get Path if Given
-        if($path){
-            // Get Parts
-            $exploded = explode('/',$path);
-            $parts = array_map('ucfirst', $exploded);
-            $this->path .= '/' . implode('/', $parts);
-        }
+        if($path) $this->path .= "/{$path}";
 
         // Check Path Exist
         if(!Directory::exists($this->path)){
-            $this->error("Model Path Not Found: '{$this->path}'");
+            $this->error("View Path Not Found: '{$this->path}'");
             return;
         }
 
         $paths = Directory::scanRecursive($this->path, true, 'php');
-        $total = 0;
-
-        echo <<<PHP
-        -------------------------------------------------------------------
-        LIST OF MODEL CLASSES:
-        -------------------------------------------------------------------\n
-        PHP;
-        foreach($paths as $path){
-            if(is_file($path)){
-                $total++;
-                echo "\t>> ".'CBM\\App\\Model\\'.str_replace(["{$this->path}/", '.php','/'], ['','','\\'], $path)."\n";
-            }
+        $items = [];
+        foreach($paths as $file){
+            if(is_file($file)) $items[] = 'CBM\\App\\Model\\'.str_replace(["{$this->path}/", '.php','/'], ['','','\\'], $file);
         }
-        echo <<<TOTAL
-        -------------------------------------------------------------------
-        Total Models: {$total}\n\n
-        TOTAL;
 
+        // Header
+        $headers = ['#', 'Templates'];
+        
+        // Find max width for "File Path" column
+        $maxLength = max(array_map('strlen', $items));
+        $col2Width = max(strlen($headers[1]), $maxLength);
+
+        // Table width
+        $line = '+' . str_repeat('-', 5) . '+' . str_repeat('-', $col2Width + 2) . "+\n";
+
+        // Print Header
+        echo $line;
+        printf("| %-3s | %-{$col2Width}s |\n", $headers[0], $headers[1]);
+        echo $line;
+
+        $count = 1;
+        // Print Rows
+        foreach ($items as $item) {
+            $item = str_replace(["{$this->path}/", '.tpl.php'], [''], $item);
+            printf("| %-3d | %-{$col2Width}s |\n", $count, $item);
+            $count ++;
+        }
+
+        echo $line;
+        echo "Total: {$count}\n\n";
         return;
     }
 }

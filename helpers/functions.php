@@ -13,7 +13,7 @@ declare(strict_types=1);
 // Deny Direct Access
 defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
-use CBM\Core\{App\Router, Filter, Uri, Option};
+use CBM\Core\{App\Router, Config, Filter, Uri, Option};
  
 // Dump Data & Die
 /**
@@ -102,11 +102,12 @@ function apply_filter(string $filter, mixed $value = null, mixed ...$args): mixe
 // Get option Value
 /**
  * @param string $key Required Argument. Options Key Name
+ * @param ?string $default Optional Argument. Default will return if no value found
  * @return ?string
 */
-function option(string $key): ?string
+function option(string $key, ?string $default = null): ?string
 {
-    return Option::get($key);
+    return Option::get($key) ?: Config::get('app', $key, $default);
 }
 
 /**

@@ -29,10 +29,12 @@ class Migrate Extends Command
         return [
             'app.name'      =>  'CBM Framework',
             'time.zone'     =>  'Europe/London',
-            'dateformat'    =>  'Y-M-d H:i:s',
+            'time.format'   =>  'Y-M-d H:i:s',
             'dbsession'     =>  'yes',
             'developermode' =>  'yes',
-            'basepath'      =>  APP_PATH ?? realpath(__DIR__.'/../../../../../../')
+            'basepath'      =>  realpath(APP_PATH ?? __DIR__.'/../../../../../../'),
+            'admin.icon'    =>  'favicon.ico',
+            'admin.logo'    =>  'logo.png'
         ];
     }
 

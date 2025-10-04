@@ -53,25 +53,37 @@ class Lists Extends Command
             return;
         }
 
-        $paths = Directory::scanRecursive($this->path, true, 'php');
-        $total = 0;
-
-        echo <<<PHP
-        -------------------------------------------------------------------
-        LIST OF VIEW NAMES:
-        -------------------------------------------------------------------\n
-        PHP;
-        foreach($paths as $path){
-            if(is_file($path)){
-                $total++;
-                echo "\t>> ".str_replace(["{$this->path}/", '.tpl.php'], [''], $path)."\n";
-            }
+        $paths = Directory::files($this->path, '.php');
+        $items = [];
+        foreach($paths as $file){
+            if(is_file($file)) $items[] = str_replace(["{$this->path}/", '.tpl.php'], [''], $file);
         }
-        echo <<<TOTAL
-        -------------------------------------------------------------------
-        Total Views: {$total}\n\n
-        TOTAL;
 
+        // Header
+        $headers = ['#', 'Templates'];
+        
+        // Find max width for "File Path" column
+        $maxLength = max(array_map('strlen', $items));
+        $col2Width = max(strlen($headers[1]), $maxLength);
+
+        // Table width
+        $line = '+' . str_repeat('-', 5) . '+' . str_repeat('-', $col2Width + 2) . "+\n";
+
+        // Print Header
+        echo $line;
+        printf("| %-3s | %-{$col2Width}s |\n", $headers[0], $headers[1]);
+        echo $line;
+
+        $count = 1;
+        // Print Rows
+        foreach ($items as $item) {
+            $item = str_replace(["{$this->path}/", '.tpl.php'], [''], $item);
+            printf("| %-3d | %-{$col2Width}s |\n", $count, $item);
+            $count ++;
+        }
+
+        echo $line;
+        echo "Total: {$count}\n\n";
         return;
     }
 }
