@@ -380,7 +380,7 @@ class Router
                         $middlewareClass = "CBM\\App\\Middleware\\{$name}";
 
                         // Throw Exception if Middleware Doesn't Exists
-                        if(!class_exists($middlewareClass)) throw new InvalidArgumentException("Invalid Middleware Ditected: {$middlewareClass}");
+                        if(!class_exists($middlewareClass)) throw new InvalidArgumentException("Invalid Middleware Detected: {$middlewareClass}");
 
                         $instance = new $middlewareClass();
                         if (method_exists($instance, 'handle')) {
