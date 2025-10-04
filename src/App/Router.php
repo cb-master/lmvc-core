@@ -340,15 +340,8 @@ class Router
         $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
         $path = self::normalize('/' . Uri::path());
 
-        if (!isset(self::$routes[$method])) {
-            header('Content-Type: application/json');
-            http_response_code(405);
-            print(json_encode([
-                'status'    =>  'failed',
-                'message'   =>  'Method Not Allowed'
-            ]));
-            return;
-        }
+        // Fallback If Router Method Doesn't Exists
+        if (!isset(self::$routes[$method])) goto fallback;
 
         foreach (self::$routes[$method] as $route => $data) {
             $pattern = preg_replace_callback(
@@ -424,6 +417,8 @@ class Router
             }
         }
 
+        // Fallback Marker
+        fallback:
         // Try group-specific fallbacks
         foreach (array_reverse(self::$groupFallbacks) as $prefix => $callback) {
             if (str_starts_with($path, $prefix)) {
