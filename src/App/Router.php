@@ -188,28 +188,6 @@ class Router
      */
     public static function group(string $prefix, callable $callback, array $middlewares = []): self
     {
-        // // Add Prefix for Group Fallback
-        // self::$groupStack[] = $prefix;
-
-        // // Get Previous Prefix & Middlewares
-        // $previousPrefix = self::$groupPrefix;
-        // $previousMiddlewares = self::$groupMiddlewares;
-
-        // self::$groupPrefix .= $prefix;
-        // self::$groupMiddlewares = array_merge(
-        //     self::$groupMiddlewares,
-        //     self::expandGroups($middlewares)
-        // );
-
-        // $callback(new self);
-
-        // // Pop Group Fallback
-        // array_pop(self::$groupStack);
-        // // Reset to Previous Prefix & Middlewares
-        // self::$groupPrefix = $previousPrefix;
-        // self::$groupMiddlewares = $previousMiddlewares;
-        // return new self;
-
         // push normalized prefix fragment onto stack (ensures leading slash, no trailing)
         self::$groupStack[] = self::normalize($prefix);
 
