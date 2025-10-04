@@ -592,7 +592,11 @@ class Router
     private static function executeCallback(callable|array|string $callback, array ...$params): void
     {
         if (is_string($callback)) {
-            [$controller, $method] = explode('@', $callback);
+            // Set Controller & Method
+            $parts = explode('@', $callback);
+            if(!isset($parts[0]) || !isset($parts[1])) throw new \RuntimeException("Invalid Callable Method: '{$callback}'");
+            [$controller, $method] = $parts;
+
             $controller = "CBM\\App\\Controller\\{$controller}";
 
             if(!class_exists($controller) || !method_exists($controller, $method)){
