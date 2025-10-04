@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace CBM\Core;
 
+use Exception;
+
 // Deny Direct Access
 defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
@@ -20,30 +22,22 @@ class Api
     /**
      * @property int $code Response Code
      */
-    private int $code;
+    private int $code = 400;
 
     /**
      * @property string $message Response Message
      */
-    private string $message;
+    private string $message = '';
 
     /**
      * @property bool $status Response Status
      */
-    private bool $status;
+    private bool $status = false;
 
     /**
      * @property array $data Response Data as JSON
      */
-    private array $data;
-
-    public function __construct()
-    {
-        $this->code     =   200;
-        $this->message  =   $this->defaultMessage($this->code);
-        $this->status   =   $this->isSuccess($this->code);
-        $this->data     =   [];
-    }
+    private array $data = [];
 
     /**
      * @param int $code Response Code
@@ -62,16 +56,6 @@ class Api
     public function message(string $message): void
     {
         $this->message = $message;
-        return;
-    }
-
-    /**
-     * @param bool $status Response Status
-     * @return void
-     */
-    public function status(bool $status): void
-    {
-        $this->status = $status;
         return;
     }
 
@@ -154,6 +138,9 @@ class Api
      */
     public function json(): string
     {
+        $this->message  =   $this->message ?: $this->defaultMessage($this->code);
+        $this->status   =   $this->isSuccess($this->code);
+
         // Set Application/Json & HTTP Header Response Code
         Http\Response::code($this->code);
         Http\Response::setHeader(['Content-Type'=>'Application/Json']);
