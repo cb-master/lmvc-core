@@ -18,4 +18,4 @@ declare(strict_types=1);
 defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
 // Require All Functions File
-array_map(function($file){ require_once $file; }, glob(__DIR__ . '/functions/*.filter.php'));
+array_map(function($file){ require_once $file; }, glob(__DIR__ . '/hooks/*.hook.php'));
