@@ -65,6 +65,11 @@ function purify(array $data): array
 */
 function redirect(string|array $slug, ?array $params = null): void
 {
+    // Redirect if $slug is an URL
+    if(parse_url($slug, PHP_URL_HOST)){
+        header('Location:'.$slug, true);
+        die();
+    }
     // Convert to String if Slug is Array
     if(is_array($slug)) $slug = implode('/', array_map('trim', $slug));
     $slug = str_replace('\\', '/', $slug);
