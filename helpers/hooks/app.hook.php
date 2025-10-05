@@ -43,7 +43,7 @@ add_filter('app.logo', function(?string $option_key = null): string {
  * @return string
  */
 add_filter('app.icon', function(?string $option_key = null): string {
-    $name = option($option_key ?? '') ?: null;
+    $name = option($option_key) ?: null;
     $icon = $name ?: 'favicon.ico';
     return apply_filter('app.host') . "resource/img/{$icon}";
 });
@@ -65,4 +65,13 @@ add_filter('app.language.load', function(?string $extension = null): void {
     apply_filter('app.language');
     require_once Language::path($extension);
     return;
+});
+
+// Language Key Value
+add_filter('lang.get', function(string $property, ...$args): string {
+    // Return if Class Doesn't Exists
+    if(!class_exists('LANG')) return '';
+    // Return if Class Exists
+    $value = LANG::$$property ?? '';
+    return $value ? sprintf($value, ...$args) : '';
 });
