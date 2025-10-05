@@ -8,19 +8,23 @@
  * For the full copyright and license information, please view the LICENSE file that was distributed with this source code.
  */
 
-####################################################################
-/*------------------------- APP FILTERS --------------------------*/
-####################################################################
-
 declare(strict_types=1);
 
 // Deny Direct Access
 defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
-use CBM\Core\{Language, Cookie};
+use CBM\Core\{Language, Cookie, Config};
 
+####################################################################
+/*------------------------- APP FILTERS --------------------------*/
+####################################################################
 // App Host
 add_filter('app.host', function(): string { return host(); });
+
+// App Name
+add_filter('app.name', function(){
+    return option('app.name') ?: Config::get('app', ) ?: 'Laika Framework!';
+});
 
 /**
  * App Logo
