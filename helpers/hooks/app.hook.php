@@ -17,6 +17,8 @@ declare(strict_types=1);
 // Deny Direct Access
 defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
+use CBM\Core\{Language, Cookie};
+
 // App Host
 add_filter('app.host', function(): string { return host(); });
 
@@ -40,4 +42,23 @@ add_filter('app.icon', function(?string $option_key = null): string {
     $name = option($option_key ?? '') ?: null;
     $icon = $name ?: 'favicon.ico';
     return apply_filter('app.host') . "resource/img/{$icon}";
+});
+
+// Language File Name
+add_filter('app.language', function(): string {
+    if(Cookie::get('language')){
+        Language::set(Cookie::get('language'));
+    }else{
+        $lang = option('language') ?: 'en';
+        Cookie::set('language', $lang);
+        Language::set($lang);
+    }
+    return Language::get();
+});
+
+// Load Language
+add_filter('app.language.load', function(?string $extension = null): void {
+    apply_filter('app.language');
+    require_once Language::path($extension);
+    return;
 });
