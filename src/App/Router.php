@@ -47,9 +47,7 @@ class Router
 
     public static function url(string $name, array $params = [], bool $absolute = false): string
     {
-        if (!isset(self::$namedRoutes[$name])) {
-            throw new \Exception("Route name '{$name}' not defined.");
-        }
+        if (!isset(self::$namedRoutes[$name])) return '';
 
         $uri = self::$namedRoutes[$name][1];
 
