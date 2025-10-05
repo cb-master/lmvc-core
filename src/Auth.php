@@ -15,7 +15,7 @@ namespace CBM\Core;
 // Deny Direct Access
 defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
-use CBM\Session\SessionManager;
+use CBM\Model\ConnectionManager;
 use CBM\Session\Session;
 use Exception;
 use Throwable;
@@ -26,11 +26,14 @@ class Auth
     // Instance Object
     private static ?object $instance = null;
 
+    // Session For
+    private string $for;
+
     // PDO Object
     private PDO $pdo;
 
     // DB Table Name
-    private string $table = 'authentication';
+    private string $table;
 
     // Cookie Name
     private string $cookie = '__AUTH';
@@ -46,16 +49,14 @@ class Auth
 
     // Initiate Session
     /**
-     * @param PDO $pdo. PDO Instance
-     * @param ?string $table. Table name. Default is null
+     * @param string $table. Table name. Example: 'authentication'
      */
-    private function __construct(PDO $pdo, ?string $table = null)
+    private function __construct(string $table, string $for)
     {
-        SessionManager::init($pdo);
-        $this->pdo = $pdo;
-        $this->table = $table ?: $this->table;
-        // $this->event = Cookie::get($this->cookie);
-        $this->event = Session::get($this->cookie, 'auth');
+        $this->for = strtoupper($for);
+        $this->pdo = ConnectionManager::get();
+        $this->table = $table;
+        $this->event = Session::get($this->cookie, $this->for);
     }
 
     // Config Instance
@@ -64,9 +65,9 @@ class Auth
      * @param ?string $table. Table name. Default is null
      * @return self
      */
-    public static function config(PDO $pdo, ?string $table = null): self
+    public static function config(string $table, string $for = 'APP'): self
     {
-        self::$instance ??= new self($pdo, $table);
+        self::$instance ??= new self($table, $for);
         // Create Table if Not Exist
         try{
             $makeSql = "CREATE TABLE IF NOT EXISTS " . self::$instance->table . " (event VARCHAR(64) NOT NULL,data TEXT NOT NULL,expire INT NOT NULL,created INT NOT NULL, INDEX(event));";
@@ -118,21 +119,27 @@ class Auth
             ':created'  =>  $time,
         ]);
 
-        // Set cookie
-        // Cookie::set(self::$instance->cookie, $event, $obj->ttl, '/'.Uri::directory());
-        Session::set(self::$instance->cookie, $event, 'auth');
+        // Set Session
+        Session::set(self::$instance->cookie, $event, self::$instance->for);
 
         return $event;
     }
 
-    // Validate User Exist
+    // Get User Data
     /**
      * Check User is Authenticated and Not Expired
+     * @return ?array
      */
-    public static function validate(): ?array
+    public static function user(): ?array
     {
         // Check Instance Loaded
         $obj = self::$instance ?? throw new Exception("Please Initiate Auth::config() First");
+
+        // Clear Session if Event Mssing
+        if (empty($obj->event)) {
+            Session::pop($obj->cookie, $obj->for);
+            return null;
+        }
 
         $realtime = time();
 
@@ -143,6 +150,7 @@ class Auth
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if(!$row){
+            Session::pop($obj->cookie, $obj->for);
             return null;
         }
 
@@ -174,7 +182,6 @@ class Auth
 
         $stmt = $obj->pdo->prepare("DELETE FROM {$obj->table} WHERE event = :event");
         $stmt->execute([':event' => $obj->event]);
-        // Cookie::pop($obj->cookie, '/'.Uri::directory());
-        Session::pop($obj->cookie, 'auth');
+        Session::pop($obj->cookie, self::$instance->for);
     }
 }
