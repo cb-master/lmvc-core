@@ -23,7 +23,6 @@ class Router
     private static array $globalBefore = [];
     private static array $globalAfter = [];
     private static array $middlewareGroups = [];
-    // private static string $groupPrefix = '';
     private static array $groupMiddlewares = [];
     private static array $namedRoutes = [];
     private static $fallback = null;
