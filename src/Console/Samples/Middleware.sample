@@ -24,7 +24,8 @@ class {{NAME}}
      * @param \Closure $next. $next will bypass to controller if called
      * @param ...$params Dynamic Parameters
      */
-    public function handle(\Closure $next, ...$params){
+    public function handle(\Closure $next, ...$params)
+    {
         // Start Code From Here....
 
 

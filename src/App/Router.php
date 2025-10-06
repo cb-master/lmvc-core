@@ -47,9 +47,7 @@ class Router
 
     public static function url(string $name, array $params = [], bool $absolute = false): string
     {
-        if (!isset(self::$namedRoutes[$name])) {
-            throw new \Exception("Route name '{$name}' not defined.");
-        }
+        if (!isset(self::$namedRoutes[$name])) return '';
 
         $uri = self::$namedRoutes[$name][1];
 
@@ -188,28 +186,6 @@ class Router
      */
     public static function group(string $prefix, callable $callback, array $middlewares = []): self
     {
-        // // Add Prefix for Group Fallback
-        // self::$groupStack[] = $prefix;
-
-        // // Get Previous Prefix & Middlewares
-        // $previousPrefix = self::$groupPrefix;
-        // $previousMiddlewares = self::$groupMiddlewares;
-
-        // self::$groupPrefix .= $prefix;
-        // self::$groupMiddlewares = array_merge(
-        //     self::$groupMiddlewares,
-        //     self::expandGroups($middlewares)
-        // );
-
-        // $callback(new self);
-
-        // // Pop Group Fallback
-        // array_pop(self::$groupStack);
-        // // Reset to Previous Prefix & Middlewares
-        // self::$groupPrefix = $previousPrefix;
-        // self::$groupMiddlewares = $previousMiddlewares;
-        // return new self;
-
         // push normalized prefix fragment onto stack (ensures leading slash, no trailing)
         self::$groupStack[] = self::normalize($prefix);
 
@@ -340,15 +316,8 @@ class Router
         $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
         $path = self::normalize('/' . Uri::path());
 
-        if (!isset(self::$routes[$method])) {
-            header('Content-Type: application/json');
-            http_response_code(405);
-            print(json_encode([
-                'status'    =>  'failed',
-                'message'   =>  'Method Not Allowed'
-            ]));
-            return;
-        }
+        // Fallback If Router Method Doesn't Exists
+        if (!isset(self::$routes[$method])) goto fallback;
 
         foreach (self::$routes[$method] as $route => $data) {
             $pattern = preg_replace_callback(
@@ -387,7 +356,7 @@ class Router
                         $middlewareClass = "CBM\\App\\Middleware\\{$name}";
 
                         // Throw Exception if Middleware Doesn't Exists
-                        if(!class_exists($middlewareClass)) throw new InvalidArgumentException("Invalid Middleware Ditected: {$middlewareClass}");
+                        if(!class_exists($middlewareClass)) throw new InvalidArgumentException("Invalid Middleware Detected: {$middlewareClass}");
 
                         $instance = new $middlewareClass();
                         if (method_exists($instance, 'handle')) {
@@ -424,6 +393,8 @@ class Router
             }
         }
 
+        // Fallback Marker
+        fallback:
         // Try group-specific fallbacks
         foreach (array_reverse(self::$groupFallbacks) as $prefix => $callback) {
             if (str_starts_with($path, $prefix)) {
@@ -597,7 +568,11 @@ class Router
     private static function executeCallback(callable|array|string $callback, array ...$params): void
     {
         if (is_string($callback)) {
-            [$controller, $method] = explode('@', $callback);
+            // Set Controller & Method
+            $parts = explode('@', $callback);
+            if(!isset($parts[0]) || !isset($parts[1])) throw new \RuntimeException("Invalid Callable Method: '{$callback}'");
+            [$controller, $method] = $parts;
+
             $controller = "CBM\\App\\Controller\\{$controller}";
 
             if(!class_exists($controller) || !method_exists($controller, $method)){

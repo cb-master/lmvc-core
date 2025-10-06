@@ -28,7 +28,7 @@ class Make Extends Command
     protected string $view_path = APP_PATH . '/lf-templates';
 
     // Accepted Regular Expresion
-    private string $exp = '/^[a-zA-Z_\/]+$/';
+    private string $exp = '/^[a-zA-Z_\/][a-zA-Z0-9_\/]+$/';
 
     // Accepted Regular Expresion
     private string $view_exp = '/^[a-zA-Z0-9_\-\/]+$/';
