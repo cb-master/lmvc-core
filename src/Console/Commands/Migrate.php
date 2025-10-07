@@ -32,7 +32,7 @@ class Migrate Extends Command
             'time.format'   =>  'Y-M-d H:i:s',
             'dbsession'     =>  'yes',
             'developermode' =>  'yes',
-            'basepath'      =>  realpath(APP_PATH ?? __DIR__.'/../../../../../../'),
+            'app.path'      =>  realpath(APP_PATH ?? __DIR__.'/../../../../../../'),
             'admin.icon'    =>  'favicon.ico',
             'admin.logo'    =>  'logo.png'
         ];

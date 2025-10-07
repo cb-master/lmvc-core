@@ -17,7 +17,7 @@ defined('APP_PATH') || http_response_code(403) . die('403 Direct Access Denied!'
 use CBM\Core\Uri;
 use InvalidArgumentException;
 
-class Router
+class Http
 {
     private static array $routes = [];
     private static array $globalBefore = [];
@@ -177,9 +177,9 @@ class Router
     }
 
     /**
-     * Register Group Router
+     * Register Group Http
      * @param string $prefix Route Prefix. Example: 'admin'
-     * @param callable $callback Callback With Router Groups.
+     * @param callable $callback Callback With Http Groups.
      * @param array $middlewares Array of Middlewares. Example: ['InitiateDB', 'Auth']
      * @return self
      */
@@ -197,7 +197,7 @@ class Router
             self::expandGroups($middlewares)
         );
 
-        // call user callback (allows Router::get() calls inside)
+        // call user callback (allows Http::get() calls inside)
         $callback(new self);
 
         // Pop prefix & restore middlewares
@@ -209,8 +209,8 @@ class Router
 
     /**
      * Middleware Group
-     * @param string $name Midleware Group Name. Example: Router::middlewareGroup('web', ['InitiateDB','Auth'])
-     * @param array $middlewares Array of Middlewares. Router::middlewareGroup('web', ['InitiateDB','Auth'])
+     * @param string $name Midleware Group Name. Example: Http::middlewareGroup('web', ['InitiateDB','Auth'])
+     * @param array $middlewares Array of Middlewares. Http::middlewareGroup('web', ['InitiateDB','Auth'])
      * @return self
      */
     public static function middlewareGroup(string $name, array $middlewares): self
@@ -221,7 +221,7 @@ class Router
 
     /**
      * Middleware
-     * @param array|string $middlewares Midleware Name. Example: Router::middleware(['InitiateDB']) or Router::middleware('InitiateDB'])
+     * @param array|string $middlewares Midleware Name. Example: Http::middleware(['InitiateDB']) or Http::middleware('InitiateDB'])
      * @return self
      */
     public function middleware(array|string $middlewares): self
@@ -236,7 +236,7 @@ class Router
 
     /**
      * After Middleware
-     * @param array|string $middlewares Midleware Name. Example: Router::middleware(['InitiateDB']) or Router::middleware('InitiateDB'])
+     * @param array|string $middlewares Midleware Name. Example: Http::middleware(['InitiateDB']) or Http::middleware('InitiateDB'])
      * @return self
      */
     public function afterware(array|string $middlewares): self
@@ -251,7 +251,7 @@ class Router
 
     /**
      * Global Middleware
-     * @param array|string $middlewares Midleware Name. Example: Router::middleware(['InitiateDB']) or Router::middleware('InitiateDB'])
+     * @param array|string $middlewares Midleware Name. Example: Http::middleware(['InitiateDB']) or Http::middleware('InitiateDB'])
      * @param int $priority Middleware Priority. Default is 50
      * @return self
      */
@@ -267,7 +267,7 @@ class Router
 
     /**
      * Global After Middleware
-     * @param array|string $middlewares Midleware Name. Example: Router::middleware(['InitiateDB']) or Router::middleware('InitiateDB'])
+     * @param array|string $middlewares Midleware Name. Example: Http::middleware(['InitiateDB']) or Http::middleware('InitiateDB'])
      * @param int $priority Middleware Priority. Default is 50
      * @return self
      */
@@ -315,7 +315,7 @@ class Router
         $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
         $path = self::normalize('/' . Uri::path());
 
-        // Fallback If Router Method Doesn't Exists
+        // Fallback If Http Method Doesn't Exists
         if (!isset(self::$routes[$method])) goto fallback;
 
         foreach (self::$routes[$method] as $route => $data) {
