@@ -12,55 +12,212 @@ namespace CBM\Core\Storage;
 // Deny Direct Access
 defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
+use Aws\Exception\AwsException;
+use CBM\Core\Directory;
 use RuntimeException;
+use Aws\S3\S3Client;
 
-/**
- * File Storage
- */
 class FileStorage
 {
+    protected string $disk;
+    protected array $config;
+    protected ?S3Client $s3 = null;
+    protected string $path;
+
+    ###################################################################
+    /*------------------------- PUBLIC API --------------------------*/
+    ###################################################################
     /**
-     * @var self $instance
+     * Only Local & S3 Ar Accepted.
+     * All Uplods Will be In uploads folder
      */
-    protected static ?self $instance = null;
-
-    /**
-     * @var string
-     */
-    protected string $path = APP_PATH . '/lf-storage';
-
-    private function __construct(){}
-
-    // Load Instance
-    private static function instance()
+    public function __construct(string $disk = 'local', array $config = [])
     {
-        self::$instance ??= new Static();
-        if (!is_dir(self::$instance->path) && !mkdir(self::$instance->path, 0777, true)) {
-            throw new RuntimeException('Cannot create storage directory: '.self::$instance->path);
+        // Check Disk is Supported
+        $disk = strtolower($disk);
+        if(!in_array($disk, ['local','s3'])) throw new RuntimeException("Unsupported Disk '{$disk}'");
+
+        $this->disk = $disk;
+        $this->config = $config;
+        
+        if ($this->disk === 's3') {
+            $this->path = 'uploads';
+            // Check Config Required Keys are Exists
+            if (!isset($this->config['region'])) throw new RuntimeException("'region' Key Missing in Config");
+            if (!isset($this->config['key'])) throw new RuntimeException("'key' Key Missing in Config");
+            if (!isset($this->config['secret'])) throw new RuntimeException("'secret' Key Missing in Config");
+            if (!isset($this->config['bucket'])) throw new RuntimeException("'bucket' Key Missing in Config");
+
+            $this->s3 = new S3Client([
+                'region'        =>  $config['region'],
+                'version'       =>  'latest',
+                'credentials'   =>  [
+                    'key'   =>  $config['key'],
+                    'secret'=>  $config['secret']
+                ]
+            ]);
+            show($this->s3, true);
+        }else{
+            $this->path = APP_PATH . '/uploads';
         }
-        return self::$instance;
     }
 
-    public static function set(string $key, mixed $value): bool
+    /**
+     * Upload file from $_FILES or file path
+     *
+     * @param array|string $file - $_FILES['file'] or local file path
+     * @param ?string $destination - destination folder (e.g. 'images')
+     * @return string|false
+     */
+    public function upload(array|string $file, ?string $destination = null): string|false
     {
-        $key = '/'.trim($key, '/');
-        $file = self::instance()->path . $key . '.php';
-        $data = "<?php return \n\t" . var_export($value, true) . ';';
-        return file_put_contents($file, $data) !== false;
+        $path = $this->path;
+        // Normalize destination
+        if($destination){
+            $path .= '/' . trim($destination, '/');
+        }else{
+            $path .= date('/Y/m/d');
+        }
+
+        // Determine temp file and name
+        if (is_array($file) && isset($file['tmp_name'])) {
+            $tmpFile = $file['tmp_name'];
+            $name = basename($file['name']);
+        } elseif (is_string($file) && file_exists($file)) {
+            $tmpFile = $file;
+            $name = basename($file);
+        } else {
+            throw new RuntimeException("Invalid file input. Must be \$_FILES or valid file path.");
+        }
+
+        // Safe MIME detection
+        $mime = mime_content_type($tmpFile) ?: 'application/octet-stream';
+
+        // Ensure local directory exists
+        if ($this->disk === 'local') Directory::make($path);
+
+        // Make File Version if File Already Exists
+        if ($this->disk === 'local' && file_exists("{$path}/{$name}")) {
+            $ext = pathinfo($name, PATHINFO_EXTENSION);
+            $base = pathinfo($name, PATHINFO_FILENAME);
+            $name = $base . '-' . uniqid() . ($ext ? ".{$ext}" : '');
+        }
+        
+        // Final target path
+        $path = "{$path}/{$name}";
+
+        // Handle per disk
+        return match ($this->disk) {
+            's3' => $this->uploadS3($tmpFile, ltrim($path, '/'), $mime),
+            'local' => $this->uploadLocal($tmpFile, $path),
+            default => false,
+        };
     }
 
-    public static function get(string $key): mixed
+    /**
+     * Delete a File
+     * @param string $file File Name With Sub Path. Example: image/sample.png. uploads will auto added
+     * @return bool
+     */
+    public function delete(string $file): bool
     {
-        $key = '/'.trim($key, '/');
-        $file = self::instance()->path . $key . '.php';
-        if (!file_exists($file)) return null;
-        return include $file;
+        $file = ltrim($file, '/');
+        $path = "{$this->path}/{$file}";
+        return match ($this->disk) {
+            's3'    => $this->deleteS3($path),
+            'local' => $this->deleteLocal($path),
+            default => false
+        };
     }
 
-    public static function pop(string $key): bool
+    /**
+     * Generate a public URL for stored files
+     * @param string $file File Name. Example: image/sample.png. uploads will auto added
+     * @return string
+     */
+    public function publicUrl(string $file): string
     {
-        $key = '/'.trim($key, '/');
-        $file = self::instance()->path . $key . '.php';
+        $file = ltrim($file, '/');
+        return match ($this->disk){
+            'local' => str_replace(ltrim(APP_PATH, '/'), '', ltrim(option('app.host')."{$file}", '/')),
+            's3'    => sprintf("https://%s.s3.%s.amazonaws.com/uploads/%s", $this->config['bucket'], $this->config['region'],$file),
+            default => ''
+        };
+    }
+
+    ###################################################################
+    /*------------------------- PRIVATE API -------------------------*/
+    ###################################################################
+
+    /**
+     * Upload file to local storage
+     * @param string $tmpFile uploaded Temp File or Old File Name
+     * @param string $destination Destination File Name
+     * @return string
+     */
+    protected function uploadLocal(string $tmpFile, string $destination): string
+    {
+        // Move uploaded or copy from existing file
+        if (is_uploaded_file($tmpFile)) {
+            if (!move_uploaded_file($tmpFile, $destination)) {
+                throw new RuntimeException("Failed to move uploaded file to {$destination}");
+            }
+        } else {
+            if (!copy($tmpFile, $destination)) {
+                throw new RuntimeException("Failed to copy file to {$destination}");
+            }
+        }
+
+        return $this->publicUrl($destination);
+    }
+
+    /**
+     * Upload file to S3
+     * @param string $tmpFile uploaded Temp File or Old File Name
+     * @param string $destination Destination File Name
+     * @return string
+     */
+    protected function uploadS3(string $tmpFile, string $destination, string $mime): string
+    {
+        try {
+            $this->s3->putObject([
+                'Bucket'        =>  $this->config['bucket'],
+                'Key'           =>  $destination,
+                'SourceFile'    =>  $tmpFile,
+                'ACL'           =>  'public-read',
+                'ContentType'   =>  $mime ?: 'application/octet-stream',
+            ]);
+
+            return $this->publicUrl($destination);
+        } catch (AwsException $e) {
+            throw new RuntimeException("S3 Upload failed: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * @param string $file File Name. Example: /var/www/html/uploads/image/sample.png
+     * @return bool
+     */
+    protected function deleteLocal(string $file): bool
+    {
         return file_exists($file) ? unlink($file) : false;
+    }
+
+    /**
+     * @param string $file File Name With Sub Path. Example: uploads/image/sample.png
+     * @return bool
+     */
+    protected function deleteS3(string $path): bool
+    {
+        try {
+            $bucket = $this->config['bucket'] ?? '';
+            $this->s3->deleteObject([
+                'Bucket'    => $bucket,
+                'Key'       => $path
+            ]);
+            return true;
+        } catch (AwsException $e) {
+            throw new RuntimeException("Failed to Delete: {$e->getMessage()}");
+        }
     }
 }
