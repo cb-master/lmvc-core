@@ -13,7 +13,7 @@ namespace CBM\Core\Storage;
 defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
 use Aws\Exception\AwsException;
-use CBM\Core\Directory;
+use CBM\Core\{Directory, Uri};
 use RuntimeException;
 use Aws\S3\S3Client;
 
@@ -23,6 +23,7 @@ class FileStorage
     protected array $config;
     protected ?S3Client $s3 = null;
     protected string $path;
+    protected ?string $publicBaseUrl;
 
     ###################################################################
     /*------------------------- PUBLIC API --------------------------*/
@@ -31,7 +32,7 @@ class FileStorage
      * Only Local & S3 Ar Accepted.
      * All Uplods Will be In uploads folder
      */
-    public function __construct(string $disk = 'local', array $config = [])
+    public function __construct(string $disk = 'local', array $config = [], ?string $publicBaseUrl = null)
     {
         // Check Disk is Supported
         $disk = strtolower($disk);
@@ -39,6 +40,7 @@ class FileStorage
 
         $this->disk = $disk;
         $this->config = $config;
+        $this->publicBaseUrl = $publicBaseUrl ? rtrim($publicBaseUrl, '/') . '/' : $publicBaseUrl;
         
         if ($this->disk === 's3') {
             $this->path = 'uploads';
@@ -56,9 +58,10 @@ class FileStorage
                     'secret'=>  $config['secret']
                 ]
             ]);
-            show($this->s3, true);
         }else{
-            $this->path = APP_PATH . '/uploads';
+            if(!defined('ROOTPATH')) throw new RuntimeException("'ROOTPATH' Not Defined in Application Root Path.");
+            $this->path = ROOTPATH . '/uploads';
+            Directory::make($this->path);
         }
     }
 
@@ -130,24 +133,26 @@ class FileStorage
         };
     }
 
+    ###################################################################
+    /*------------------------- PRIVATE API -------------------------*/
+    ###################################################################
+
     /**
      * Generate a public URL for stored files
      * @param string $file File Name. Example: image/sample.png. uploads will auto added
      * @return string
      */
-    public function publicUrl(string $file): string
+    protected function url(string $file): string
     {
         $file = ltrim($file, '/');
         return match ($this->disk){
-            'local' => str_replace(ltrim(APP_PATH, '/'), '', ltrim(option('app.host')."{$file}", '/')),
-            's3'    => sprintf("https://%s.s3.%s.amazonaws.com/uploads/%s", $this->config['bucket'], $this->config['region'],$file),
+            'local' => str_replace(ltrim(APP_PATH, '/'), '', ltrim(option('app.host', rtrim(Uri::base(), '/'))."{$file}", '/')),
+            's3'    => $this->publicBaseUrl ?
+                        sprintf("https://%s.s3.%s.amazonaws.com/%s", $this->config['bucket'], $this->config['region'],$file):
+                        $this->publicBaseUrl.$file,
             default => ''
         };
     }
-
-    ###################################################################
-    /*------------------------- PRIVATE API -------------------------*/
-    ###################################################################
 
     /**
      * Upload file to local storage
@@ -168,7 +173,7 @@ class FileStorage
             }
         }
 
-        return $this->publicUrl($destination);
+        return $this->url($destination);
     }
 
     /**
@@ -188,7 +193,7 @@ class FileStorage
                 'ContentType'   =>  $mime ?: 'application/octet-stream',
             ]);
 
-            return $this->publicUrl($destination);
+            return $this->url($destination);
         } catch (AwsException $e) {
             throw new RuntimeException("S3 Upload failed: " . $e->getMessage());
         }
