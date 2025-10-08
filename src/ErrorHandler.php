@@ -38,7 +38,7 @@ class ErrorHandler
      */
     public static function register():void
     {
-        self::$debug = Config::get('app', 'debug');
+        self::$debug = (bool) Config::get('env', 'debug', true);
 
         if (self::$debug) {
             error_reporting(E_ALL);

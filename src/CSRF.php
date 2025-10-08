@@ -52,23 +52,10 @@ class CSRF
             !isset($csrf['created'], $csrf['token']) ||
             !$csrf['created'] ||
             !$csrf['token'] ||
-            (time() - $csrf['created'] > $this->lifetime)
+            ((int) option('start.time', 300) - $csrf['created'] > $this->lifetime)
         ){
             return $this->reset();
         }
-        // if(!isset($csrf['created'], $csrf['token'])){
-        //     $arr = [
-        //         'created'   =>  time(),
-        //         'token'     =>  bin2hex(random_bytes(64))
-        //     ];
-        //     Session::set($this->key, $arr, $this->for);
-        //     return $arr['token'];
-        // }
-
-        // // Regenerate if Expired
-        // if((time() - $csrf['created'] > $this->lifetime)){
-        //     return $this->reset();
-        // }
         return $csrf['token'];
     }
 
@@ -90,7 +77,7 @@ class CSRF
     public function reset(): string
     {
         $arr = [
-                'created'   =>  time(),
+                'created'   =>  (int) option('start.time', 300),
                 'token'     =>  bin2hex(random_bytes(64))
         ];
         Session::set($this->key, $arr, $this->for);
