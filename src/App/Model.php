@@ -17,7 +17,7 @@ defined('APP_PATH') || http_response_code(403).die('403 Forbidden Access!');
 class Model Extends BaseModel
 {
     // Status Table Name
-    protected string $status_table;
+    public string $status_table;
 
     // List
     private array $list = [];

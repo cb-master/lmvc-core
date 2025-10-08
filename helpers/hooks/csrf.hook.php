@@ -10,19 +10,19 @@
 
 declare(strict_types=1);
 
-// Namespace
-namespace CBM\App\Model{{NAMESPACE}};
-
 // Deny Direct Access
 defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
-use CBM\Core\App\Model;
+use CBM\Core\CSRF;
 
-class {{NAME}} Extends Model
-{
-    // Table Name
-    public string $table = '{{TABLE_NAME}}';
-
-    // Primary Key Column Name
-    public string $id = '{{PRIMARY_KEY}}';
-}
+#####################################################################
+/*------------------------- CSRF FILTERS --------------------------*/
+#####################################################################
+/**
+ * CSRF Token HTL Field
+ * @return string
+ */
+add_filter('csrf.field', function (array $config = []): string{
+    $obj = new CSRF($config);
+    return $obj->field();
+});
