@@ -107,12 +107,12 @@ function apply_filter(string $filter, mixed $value = null, mixed ...$args): mixe
 // Get option Value
 /**
  * @param string $key Required Argument. Options Key Name
- * @param ?string $default Optional Argument. Default will return if no value found
+ * @param mixed $default Optional Argument. Default will return if no value found
  * @return ?string
 */
-function option(string $key, ?string $default = null): ?string
+function option(string $key, mixed $default = null): mixed
 {
-    return Option::get($key) ?: Config::get('app', $key, $default);
+    return Option::get($key, Config::get('env', $key, $default));
 }
 
 /**

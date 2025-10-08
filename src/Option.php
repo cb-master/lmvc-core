@@ -30,19 +30,20 @@ class Option
     // Option Value Column
     private static string $value = 'opt_value';
 
-    // Get Option Value
     /**
+     * Get Option Value
      * @param string $name - Required Argument as Option Key.
-     * @return string
+     * @param mixed $default - If No Valu Exists/Found, Default will Return.
+     * @return mixed
      */
-    public static function get(string $name): ?string
+    public static function get(string $name, mixed $default = null): mixed
     {
         try{
             $db = DB::getInstance();
             $option = $db->table(self::$table)->where(self::$key, '=', $name)->first(self::$value);
-            return $option[self::$value] ?? null;
+            return $option[self::$value] ?? $default;
         }catch(Throwable $th){}
-        return null;
+        return $default;
     }
 
     // Set Option
