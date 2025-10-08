@@ -34,7 +34,8 @@ class Migrate Extends Command
             'developermode' =>  'yes',
             'app.path'      =>  realpath(APP_PATH ?? __DIR__.'/../../../../../../'),
             'admin.icon'    =>  'favicon.ico',
-            'admin.logo'    =>  'logo.png'
+            'admin.logo'    =>  'logo.png',
+            'csrf.lifetime' =>  'logo.png',
         ];
     }
 

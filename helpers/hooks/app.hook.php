@@ -70,7 +70,7 @@ add_filter('app.language.load', function(?string $extension = null): void {
 // Language Key Value
 add_filter('lang.get', function(string $property, ...$args): string {
     // Return if Class Doesn't Exists
-    if(!class_exists('LANG')) return '';
+    if(!class_exists('LANG')) throw new RuntimeException("'LANG' Class Doesn't Exists!");
     // Return if Class Exists
     $value = LANG::$$property ?? '';
     return $value ? sprintf($value, ...$args) : '';
