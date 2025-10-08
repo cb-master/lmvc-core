@@ -16,7 +16,7 @@ namespace CBM\Core\Console\Commands\Route;
 // Deny Direct Access
 defined('APP_PATH') || http_response_code(403) . die('403 Direct Access Denied!');
 
-use CBM\Core\{Console\Command, App\Router, Directory};
+use CBM\Core\{Console\Command, App\Http};
 
 // Make Controller Class
 class Lists Extends Command
@@ -37,8 +37,8 @@ class Lists Extends Command
         REGISTERED ROUTES:
         -------------------------------------------------------------------\n
         PHP;
-        // Get Router List
-        Router::inspectAll();
+        // Get Http List
+        Http::inspectAll();
         return;
     }
 }

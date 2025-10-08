@@ -243,8 +243,8 @@ class Http
     {
         if (!is_array($middlewares)) $middlewares = [$middlewares];
         if (self::$lastMethod && self::$lastUri) {
-            self::$routes[self::$lastMethod][self::$lastUri]['after'] =
-                array_merge(self::$routes[self::$lastMethod][self::$lastUri]['after'], $middlewares);
+            self::$routes[self::$lastMethod][self::$lastUri]['afterwares'] =
+                array_merge(self::$routes[self::$lastMethod][self::$lastUri]['afterwares'], $middlewares);
         }
         return $this;
     }
@@ -344,45 +344,75 @@ class Http
                 $middlewares = array_merge($before, $data['middlewares']);
                 $callback = $data['callback'];
 
-                // Collect after middlewares
-                $afterwares = array_merge($data['after'], $after);
-
                 // Run pipeline
                 ob_start();
-                $runner = function ($index) use (&$runner, $middlewares, $callback, $matches) {
+
+                $runner = function ($index, array $context = []) use (&$runner, $middlewares, $callback, $matches) {
                     if (isset($middlewares[$index])) {
                         [$name, $params] = self::parseMiddleware($middlewares[$index], $matches);
                         $middlewareClass = "CBM\\App\\Middleware\\{$name}";
 
-                        // Throw Exception if Middleware Doesn't Exists
-                        if(!class_exists($middlewareClass)) throw new InvalidArgumentException("Invalid Middleware Detected: {$middlewareClass}");
-
-                        $instance = new $middlewareClass();
-                        if (method_exists($instance, 'handle')) {
-                            return $instance->handle(fn() => $runner($index + 1), ...$params);
+                        if (!class_exists($middlewareClass)) {
+                            throw new InvalidArgumentException("Invalid Middleware Detected: {$middlewareClass}");
                         }
 
-                        return;
-                    } else {
-                        self::executeCallback($callback, $matches);
+                        $instance = new $middlewareClass();
+
+                        if (method_exists($instance, 'handle')) {
+                            // Pass context and params to middleware
+                            [$response, $newContext] = $instance->handle(
+                                fn(array $nextContext = []) => $runner($index + 1, array_merge($context, $nextContext)),
+                                array_merge($context, $params)
+                            );
+                            return [$response, array_merge($context, $newContext)];
+                        }
+
+                        // No handle() → continue
+                        return $runner($index + 1, $context);
                     }
+
+                    // FINAL STEP: merge route params + middleware-returned context
+                    $finalParams = array_merge($matches, $context);
+
+                    $response = self::executeCallback($callback, $finalParams);
+                    return [$response, $finalParams];
                 };
-                $result = $runner(0);
+                [$result, $finalParams] = $runner(0);
 
                 // Combine echoed output + returned string (if any)
                 $buffer = ob_get_clean();
                 $response = ($buffer !== '' ? $buffer : '') . ($result ?? '');
 
                 // Run AFTER middlewares (route + global)
-                $allAfter = array_merge($data['after'], $after);
+                $afterwares = array_merge($data['afterwares'], $after);
 
-                foreach ($allAfter as $mw) {
+                foreach ($afterwares as $mw) {
                     [$name, $params] = self::parseMiddleware($mw, $matches);
                     $middlewareClass = "CBM\\App\\Middleware\\{$name}";
+
                     if (class_exists($middlewareClass)) {
                         $instance = new $middlewareClass();
+
                         if (method_exists($instance, 'terminate')) {
-                            $response = $instance->terminate($response, ...$params);
+                            // Merge everything into unified context
+                            $terminateContext = array_merge(
+                                $finalParams,
+                                $params,
+                                [
+                                    '_method' => $method,
+                                    '_uri'    => $path,
+                                    '_route'  => $data['name'] ?? null,
+                                ]
+                            );
+
+                            $resultFromTerminate = $instance->terminate($response, $terminateContext);
+
+                            // Allow terminate() to modify response
+                            if (is_array($resultFromTerminate)) {
+                                [$response, $finalParams] = array_pad($resultFromTerminate, 2, $finalParams);
+                            } elseif ($resultFromTerminate !== null) {
+                                $response = $resultFromTerminate;
+                            }
                         }
                     }
                 }
@@ -457,7 +487,7 @@ class Http
                 $after  = array_column(self::$globalAfter, 'name');
 
                 $routeBefore = self::expandGroups($data['middlewares']);
-                $routeAfter  = self::expandGroups($data['after']);
+                $routeAfter  = self::expandGroups($data['afterwares']);
 
                 // Build execution order
                 $pipeline = array_merge($before, $routeBefore, ['[Controller]'], $routeAfter, $after);
@@ -615,12 +645,17 @@ class Http
 
     private static function parseMiddleware(string $middleware, array $matches): array
     {
-        $parts = explode(':', $middleware, 2);
+        // $matches is Associative named params (['id' => 3])
+        $parts = explode('|', $middleware, 2);
         $name = $parts[0];
 
-        $routeParams = $matches; // Associative named params (['id' => 3])
         $extra = isset($parts[1]) ? explode(',', $parts[1]) : [];
-        return [$name, array_merge($routeParams, ['action'=>$extra])];
+        foreach($extra as $param){
+            $internal_params = explode(':', $param);
+            $matches[$internal_params[0]] = $internal_params[1] ?? null;
+        }
+        // return [$name, array_merge($routeParams, ['action'=>$extra])];
+        return [$name, $matches];
     }
 
     private static function normalize(string $uri): string
@@ -664,7 +699,7 @@ class Http
         $after  = array_column(self::$globalAfter, 'name');
 
         $routeBefore = self::expandGroups($data['middlewares']);
-        $routeAfter  = self::expandGroups($data['after']);
+        $routeAfter  = self::expandGroups($data['afterwares']);
 
         return array_merge($before, $routeBefore, ['[Controller]'], $routeAfter, $after);
     }
@@ -678,7 +713,7 @@ class Http
         return [
             'callback'      =>  $callback,
             'middlewares'   =>  self::groupedMiddlewares(),
-            'after'         =>  [],
+            'afterwares'    =>  [],
             'name'          =>  null
         ];
     }
