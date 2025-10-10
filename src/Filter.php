@@ -52,7 +52,8 @@ class Filter
 
         foreach (self::$filters[$filter] as $callbacks) {
             foreach ($callbacks as $callback) {
-                $value = $callback($value, ...$args);
+                $value = ($value === null && empty($args)) ? $callback() : $callback($value, ...$args);
+                // $value = $callback($value, ...$args);
             }
         }
 

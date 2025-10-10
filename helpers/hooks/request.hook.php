@@ -24,8 +24,13 @@ add_filter('request.header', function(string $key): ?string {
 });
 
 // Get Request Input Value
-add_filter('request.input', function(string $key, mixed $default = null): ?string {
+add_filter('request.input', function(string $key, mixed $default = ''): mixed {
     return Request::input($key, $default);
+});
+
+// Get Request Values
+add_filter('request.all', function(): array {
+    return Request::all();
 });
 
 // Check Method Request is Post/Get/Ajax
