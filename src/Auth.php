@@ -50,11 +50,11 @@ class Auth
     // Real Time
     private int $time;
 
-    // Initiate Session
     /**
-     * @param string $table. Table name. Example: 'authentication'
+     * Initiate Auth Session
+     * @param string $for. Auth Running For. Example: 'admin'/client
      */
-    private function __construct(string $for = 'app')
+    private function __construct(string $for)
     {
         $this->for = strtolower($for);
         $this->pdo = ConnectionManager::get();
@@ -65,13 +65,12 @@ class Auth
 
     // Config Instance
     /**
-     * @param PDO $pdo. PDO Instance
-     * @param ?string $table. Table name. Default is null
+     * @param string $for. Auth Running For. Example: 'admin'/client
      * @return self
      */
-    public static function config(string $table, string $for = 'APP'): self
+    public static function config(string $for = 'APP'): self
     {
-        self::$instance ??= new self($table, $for);
+        self::$instance ??= new self($for);
         // Create Table if Not Exist
         try{
             $makeSql = "CREATE TABLE IF NOT EXISTS " . self::$instance->table . " (event VARCHAR(64) NOT NULL,data TEXT NOT NULL,expire INT NOT NULL,created INT NOT NULL, INDEX(event), INDEX(expire), INDEX(created));";
