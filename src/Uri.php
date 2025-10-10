@@ -106,7 +106,7 @@ class Uri
     public static function query(): array
     {
         parse_str(self::getInstance()->queryString, $queries);
-        return $queries;
+        return purify($queries);
     }
 
     // Get Query String by Key

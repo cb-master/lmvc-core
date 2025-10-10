@@ -54,11 +54,11 @@ class Auth
     /**
      * @param string $table. Table name. Example: 'authentication'
      */
-    private function __construct(string $table, string $for)
+    private function __construct(string $for = 'app')
     {
-        $this->for = strtoupper($for);
+        $this->for = strtolower($for);
         $this->pdo = ConnectionManager::get();
-        $this->table = $table;
+        $this->table = "{$this->for}_sessions";
         $this->event = Session::get($this->cookie, $this->for);
         $this->time = (int) option('start.time', time());
     }
@@ -166,7 +166,7 @@ class Auth
     /**
      * Regenerate Auth Event ID
      */
-    public function regenerate(): string
+    public static function regenerate(): string
     {
         // Check Instance Loaded
         $obj = self::$instance ?? throw new Exception("Please Initiate Auth::config() First");
