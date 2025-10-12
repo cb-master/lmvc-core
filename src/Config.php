@@ -58,8 +58,6 @@ class Config
         $obj = self::getInstance();
         $name = strtolower($name);
 
-        $result[$name] = '';
-
         // Get Value
         if($key !== null) return $obj->config[$name][$key] ?? $default;
         return $obj->config[$name] ?? $default;

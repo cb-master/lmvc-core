@@ -67,11 +67,16 @@ add_filter('app.language.load', function(?string $extension = null): void {
     return;
 });
 
-// Language Key Value
-add_filter('lang.get', function(string $property, ...$args): string {
+/**
+ * Local Language
+ * @param string $property Property of LANG Class
+ * @param array ...$args Other Parameters for sprintf()
+ * @return string
+ */
+add_filter('app.local', function(string $property, ...$args): string {
     // Return if Class Doesn't Exists
     if(!class_exists('LANG')) throw new RuntimeException("'LANG' Class Doesn't Exists!");
     // Return if Class Exists
-    $value = LANG::$$property ?? '';
+    $value = LANG::$$property ?? 'Local Property Does Not Exists!';
     return $value ? sprintf($value, ...$args) : '';
 });

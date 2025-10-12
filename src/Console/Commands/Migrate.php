@@ -80,9 +80,9 @@ class Migrate Extends Command
             $db->table('options')->insertMany($rows);
 
             // Create Secret Config File if Not Exist
-            if(!Config::has('secret')) Config::create('secret', ['key'=>bin2hex(random_bytes(32))]);
+            if(!Config::has('secret')) Config::create('secret', ['key'=>bin2hex(random_bytes(64))]);
             // Create Secret Key Value Not Exist or Empty
-            if(!Config::has('secret', 'key')) Config::set('secret', 'key', bin2hex(random_bytes(32)));
+            if(!Config::has('secret', 'key')) Config::set('secret', 'key', bin2hex(random_bytes(64)));
             // Success Message
             $this->info("App Migrated Successfully");
         } catch (\Throwable $th) {

@@ -60,13 +60,14 @@ class Token
      */
     public function generate(?array $user = null): string
     {
-        $now = new DateTimeImmutable();
+        // $now = new DateTimeImmutable();
+        $time = new Date();
         $payload = [
             'iss' => $this->issuer,
             'aud' => $this->audience,
-            'iat' => $now->getTimestamp(),
-            'nbf' => $now->getTimestamp(),
-            'exp' => $now->getTimestamp() + $this->expiration,
+            'iat' => $time->getTimestamp(),
+            'nbf' => $time->getTimestamp(),
+            'exp' => $time->getTimestamp() + $this->expiration,
             'data' => $user
         ];
 

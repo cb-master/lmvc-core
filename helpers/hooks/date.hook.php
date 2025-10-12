@@ -18,9 +18,25 @@ use CBM\Core\Date;
 #####################################################################
 /*------------------------- DATE FILTERS --------------------------*/
 #####################################################################
-// Date Object
-add_filter('date.object', function(string $time = 'now'): object {
+/**
+ * Date Object
+ * @param ?string $time Default is null. Where null means 'now'
+ * @return object
+ */
+add_filter('date.object', function(?string $time = null): object {
+    $time = $time ?: 'now';
     $format = option('time.format', 'Y-M-d H:i:s');
     $timezone = option('time.zone', 'Europe/London');
     return new Date($time, $format, $timezone);
+});
+
+/**
+ * Display Date
+ * @param int $time Unix Timestamps
+ * @return string
+ */
+add_filter('date.show', function(int $time): string{
+    $obj = apply_filter('date.object');
+    $obj->setTimestamp($time);
+    return $obj->format();
 });

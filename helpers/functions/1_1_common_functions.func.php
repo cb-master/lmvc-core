@@ -108,7 +108,7 @@ function apply_filter(string $filter, mixed $value = null, mixed ...$args): mixe
 /**
  * @param string $key Required Argument. Options Key Name
  * @param mixed $default Optional Argument. Default will return if no value found
- * @return ?string
+ * @return mixed
 */
 function option(string $key, mixed $default = null): mixed
 {

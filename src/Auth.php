@@ -47,34 +47,37 @@ class Auth
     // Event ID
     private ?string $event;
 
-    // Initiate Session
+    // Real Time
+    private int $time;
+
     /**
-     * @param string $table. Table name. Example: 'authentication'
+     * Initiate Auth Session
+     * @param string $for. Auth Running For. Example: 'admin'/client
      */
-    private function __construct(string $table, string $for)
+    private function __construct(string $for)
     {
-        $this->for = strtoupper($for);
+        $this->for = strtolower($for);
         $this->pdo = ConnectionManager::get();
-        $this->table = $table;
+        $this->table = "{$this->for}_sessions";
         $this->event = Session::get($this->cookie, $this->for);
+        $this->time = (int) option('start.time', time());
     }
 
     // Config Instance
     /**
-     * @param PDO $pdo. PDO Instance
-     * @param ?string $table. Table name. Default is null
+     * @param string $for. Auth Running For. Example: 'admin'/client
      * @return self
      */
-    public static function config(string $table, string $for = 'APP'): self
+    public static function config(string $for = 'APP'): self
     {
-        self::$instance ??= new self($table, $for);
+        self::$instance ??= new self($for);
         // Create Table if Not Exist
         try{
-            $makeSql = "CREATE TABLE IF NOT EXISTS " . self::$instance->table . " (event VARCHAR(64) NOT NULL,data TEXT NOT NULL,expire INT NOT NULL,created INT NOT NULL, INDEX(event));";
+            $makeSql = "CREATE TABLE IF NOT EXISTS " . self::$instance->table . " (event VARCHAR(64) NOT NULL,data TEXT NOT NULL,expire INT NOT NULL,created INT NOT NULL, INDEX(event), INDEX(expire), INDEX(created));";
             $stmt = self::$instance->pdo->prepare($makeSql);
             $stmt->execute();
         }catch(Throwable $th){
-            if(Config::get('app', 'debug')){
+            if(option('debug')){
                 ErrorHandler::handleException($th);
             }
         }
@@ -104,25 +107,25 @@ class Auth
         $obj->user = $user;
 
         // Get Event ID
-        $event = bin2hex(random_bytes(32));
+        $obj->event = bin2hex(random_bytes(32));
         // Set Expire Time
-        $time = time();
+        $time = $obj->time;
         $expire = $time + $obj->ttl;
-
         // Make SQL
         $sql = "INSERT INTO {$obj->table} (event, data, expire, created) VALUES (:event, :data, :expire, :created)";
-        $stmt = self::$instance->pdo->prepare($sql);
+        $stmt = $obj->pdo->prepare($sql);
+
         $stmt->execute([
-            ':event'    =>  $event,
+            ':event'    =>  $obj->event,
             ':data'     =>  json_encode($user),
             ':expire'   =>  $expire,
             ':created'  =>  $time,
         ]);
 
         // Set Session
-        Session::set(self::$instance->cookie, $event, self::$instance->for);
-
-        return $event;
+        Session::set($obj->cookie, $obj->event, $obj->for);
+        
+        return $obj->event;
     }
 
     // Get User Data
@@ -141,21 +144,20 @@ class Auth
             return null;
         }
 
-        $realtime = time();
-
         // Get DB Data
         $stmt = $obj->pdo->prepare("SELECT data, expire FROM {$obj->table} WHERE event = :event AND expire > :expire LIMIT 1");
-        $stmt->execute([':event' => $obj->event, ':expire' => $realtime]);
+        $stmt->execute([':event' => $obj->event, ':expire' => $obj->time]);
 
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
+        
         if(!$row){
             Session::pop($obj->cookie, $obj->for);
             return null;
         }
-
+        
         $obj->user = json_decode($row['data'], true);
-        if(($row['expire'] - $realtime) < ($obj->ttl / 2)) self::regenerate();
+
+        if(($row['expire'] - $obj->time) < ($obj->ttl / 2)) self::regenerate();
 
         return $obj->user;
     }
@@ -182,6 +184,6 @@ class Auth
 
         $stmt = $obj->pdo->prepare("DELETE FROM {$obj->table} WHERE event = :event");
         $stmt->execute([':event' => $obj->event]);
-        Session::pop($obj->cookie, self::$instance->for);
+        Session::pop($obj->cookie, $obj->for);
     }
 }

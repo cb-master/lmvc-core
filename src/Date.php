@@ -39,7 +39,7 @@ class Date
      */
     public function __construct(string $time = 'now', string $format = 'Y-m-d H:i:s', ?string $timezone = null)
     {
-        $this->timezone = $timezone ?: 'UTC';
+        $this->timezone = $timezone ?: date_default_timezone_get();
         $this->format = $format;
         $this->dateTime = new DateTime($time, new DateTimeZone($this->timezone));
     }

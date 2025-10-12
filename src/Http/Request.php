@@ -19,60 +19,45 @@ defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 class Request
 {
     /**
-     * @property ?object $instance
+     * @property ?self $instance
      */
-    protected static ?object $instance;
+    protected static ?self $instance = null;
 
     /**
      * @property array $get
      */
-    protected static array $get;
+    protected array $get;
 
     /**
      * @property array $post
      */
-    protected static array $post;
+    protected array $post;
 
     /**
      * @property array $files
      */
-    protected static array $files;
+    protected array $files;
 
     /**
      * @property array $json
      */
-    protected static array $json;
+    protected array $json;
 
     /**
      * @property string $rawBody
      */
-    protected static string $rawBody;
+    protected string $rawBody;
 
     /**
      * @property string $method
      */
-    protected static string $method;
-
-
-    private function __construct()
-    {
-        self::$get = purify($_GET ?? []);
-        self::$post = purify($_POST ?? []);
-        self::$files = $_FILES ?? [];
-        self::$rawBody = file_get_contents('php://input');
-        self::$json = purify(self::json());
-        self::$method = strtoupper(self::$post['_method'] ?? $_SERVER['REQUEST_METHOD'] ?? 'GET');
-    }
+    protected string $method;
 
     /**
-     * Get Request Instance
-     * @return static
+     * @property array $errors Request Validate Errors
      */
-    private static function getInstance(): static
-    {
-        self::$instance ??= new self();
-        return self::$instance;
-    }
+    protected array $errors;
+
 
     ##################################################################
     /*------------------------- PUBLIC API -------------------------*/
@@ -86,7 +71,7 @@ class Request
     {
         // Define $instance if Not Defined Yet
         self::getInstance();
-        return self::$method;
+        return self::$instance->method;
     }
 
     /**
@@ -110,7 +95,7 @@ class Request
     {
         // Define $instance if Not Defined Yet
         self::getInstance();
-        return self::$method === 'POST';
+        return self::$instance->method === 'POST';
     }
 
     /**
@@ -121,7 +106,7 @@ class Request
     {
         // Define $instance if Not Defined Yet
         self::getInstance();
-        return self::$method === 'GET';
+        return self::$instance->method === 'GET';
     }
 
     /**
@@ -145,7 +130,7 @@ class Request
     {
         // Define $instance if Not Defined Yet
         self::getInstance();
-        return self::$post[$key] ?? self::$get[$key] ?? self::$json[$key] ?? $default;
+        return self::$instance->post[$key] ?? self::$instance->get[$key] ?? self::$instance->json[$key] ?? $default;
     }
 
     /**
@@ -156,7 +141,7 @@ class Request
     {
         // Define $instance if Not Defined Yet
         self::getInstance();
-        return array_merge(self::$get, self::$post, self::$json);
+        return array_merge(self::$instance->get, self::$instance->post, self::$instance->json);
     }
 
     // Get Selected Key Values
@@ -165,9 +150,11 @@ class Request
         // Define $instance if Not Defined Yet
         self::getInstance();
 
-        return array_map(function($key){
-            return self::input($key, null);
-        },$keys);
+        $result = [];
+        foreach ($keys as $key) {
+            $result[$key] = self::input($key, null);
+        }
+        return $result;
     }
 
     /**
@@ -179,7 +166,7 @@ class Request
     {
         // Define $instance if Not Defined Yet
         self::getInstance();
-        return array_key_exists($key, self::$post) || array_key_exists($key, self::$get) || array_key_exists($key, self::$json);
+        return array_key_exists($key, self::$instance->post) || array_key_exists($key, self::$instance->get) || array_key_exists($key, self::$instance->json);
     }
 
     /**
@@ -188,12 +175,9 @@ class Request
      */
     public static function json(): array
     {
-        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
-        if (str_starts_with(strtolower($contentType), 'application/json')) {
-            $decoded = json_decode(self::$rawBody, true);
-            return is_array($decoded) ? $decoded : [];
-        }
-        return [];
+        // Define $instance if Not Defined Yet
+        self::getInstance();
+        return self::$instance->json;
     }
 
     /**
@@ -205,7 +189,7 @@ class Request
     {
         // Define $instance if Not Defined Yet
         self::getInstance();
-        return $key ? (self::$files[$key] ?? []) : self::$files;
+        return $key ? (self::$instance->files[$key] ?? []) : self::$instance->files;
     }
 
     /**
@@ -216,7 +200,7 @@ class Request
     {
         // Define $instance if Not Defined Yet
         self::getInstance();
-        return self::$rawBody;
+        return self::$instance->rawBody;
     }
 
     /**
@@ -226,8 +210,8 @@ class Request
      */
     public static function validRequestKeys(array $keys): bool
     {
-        foreach($keys as $key){
-            if(!self::input($key)){
+        foreach ($keys as $key) {
+            if (!self::has($key)) {
                 return false;
             }
         }
@@ -256,6 +240,55 @@ class Request
      */
     public static function validate(array $rules, array $customMessages = []): array
     {
-        return Validator::make(self::all(), $rules, $customMessages);
+        // Define $instance if Not Defined Yet
+        self::getInstance();
+        self::$instance->errors = Validator::make(self::all(), $rules, $customMessages);
+        return self::$instance->errors;
+    }
+
+    /**
+     * Request Errors
+     * @return array
+     */
+    public static function errors(): array
+    {
+        // Define $instance if Not Defined Yet
+        self::getInstance();
+        return self::$instance->errors;
+    }
+
+    ########################################################################
+    /*--------------------------- INTERNAL API ---------------------------*/
+    ########################################################################
+
+    private function __construct()
+    {
+        $this->get = purify($_GET ?? []);
+        $this->post = purify($_POST ?? []);
+        $this->files = $_FILES ?? [];
+        $this->rawBody = file_get_contents('php://input');
+        $this->json = purify($this->decodeJson($this->rawBody));
+        $this->method = strtoupper($this->post['_method'] ?? $_SERVER['REQUEST_METHOD'] ?? 'GET');
+        $this->errors = [];
+    }
+
+    /**
+     * Get Request Instance
+     * @return static
+     */
+    private static function getInstance(): static
+    {
+        self::$instance ??= new self();
+        return self::$instance;
+    }
+
+    private function decodeJson(string $rawBody): array
+    {
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+        if (str_starts_with(strtolower($contentType), 'application/json')) {
+            $decoded = json_decode($rawBody, true);
+            return is_array($decoded) ? $decoded : [];
+        }
+        return [];
     }
 }

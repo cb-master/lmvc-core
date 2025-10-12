@@ -14,7 +14,7 @@ namespace CBM\Core\Http;
 
 defined('APP_PATH') || http_response_code(403).die('403 Direct Access Denied!');
 
-use CBM\Core\Config;
+use CBM\Core\{Config, Token, Uri};
 
 class Response
 {
@@ -63,9 +63,14 @@ class Response
      */
     public static function register(): void
     {
+        $token = new Token();
         $customHeaders = [
-            "Request-Time" => time(),
-            "App-Provider" => Config::get('app', 'provider'),
+            "Request-Time" =>   time(),
+            "App-Provider" =>   Config::get('app', 'provider'),
+            "Authorization"=>   $token->generate([
+                    'uid'       =>  mt_rand(100001, 999999),
+                    'requestor' =>  Uri::current()
+                ])
         ];
 
         $headers = array_merge(self::$headers, $customHeaders);
