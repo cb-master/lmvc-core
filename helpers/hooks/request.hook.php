@@ -51,3 +51,12 @@ add_filter('request.is', function(string $method): bool {
             break;
     }
 });
+
+/**
+ * Get Request Error
+ * @return string
+ */
+add_filter('request.error', function(string $key): string{
+    $errors = Request::errors();
+    return $errors[$key][0] ?? '';
+});
