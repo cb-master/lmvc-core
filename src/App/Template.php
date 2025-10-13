@@ -142,7 +142,7 @@ class Template
         // Create Hooks Path if Does Not Exists
         Directory::make($hooks_path);
         // Load Hooks
-        $files = Directory::scanRecursive($hooks_path, true, ['php']);
+        $files = Directory::files($hooks_path, '.hook.php');
         foreach($files as $file){
             require_once $file;
         }

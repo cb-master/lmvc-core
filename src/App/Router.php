@@ -17,7 +17,7 @@ defined('APP_PATH') || http_response_code(403) . die('403 Direct Access Denied!'
 use CBM\Core\Uri;
 use InvalidArgumentException;
 
-class Http
+class Router
 {
     private static array $routes = [];
     private static array $globalBefore = [];
@@ -32,9 +32,13 @@ class Http
     private static ?string $lastUri    = null;
 
     ################################################################
-    /* ------------------- ROUTE REGISTRATION ------------------- */
+    /* ----------------------- PUBLIC API ----------------------- */
     ################################################################
 
+    /**
+     * @param string $name Route Name. Example: 'home'
+     * @return self
+     */
     public function name(string $name): self
     {
         if (self::$lastMethod && self::$lastUri) {
@@ -44,6 +48,12 @@ class Http
         return $this;
     }
 
+    /**
+     * @param string $name Route Name. Example: 'home'
+     * @param array $params Parameters. Example: ['id'=>12,'action'=>'delete']
+     * @param bool $absolute Return Absolute Url. Default is false
+     * @return string
+     */
     public static function url(string $name, array $params = [], bool $absolute = false): string
     {
         if (!isset(self::$namedRoutes[$name])) return '';
@@ -359,12 +369,43 @@ class Http
                         $instance = new $middlewareClass();
 
                         if (method_exists($instance, 'handle')) {
-                            // Pass context and params to middleware
-                            [$response, $newContext] = $instance->handle(
-                                fn(array $nextContext = []) => $runner($index + 1, array_merge($context, $nextContext)),
-                                array_merge($context, $params)
-                            );
-                            return [$response, array_merge($context, $newContext)];
+                            // next closure — when called, it advances the pipeline and merges context
+                            $next = function(array $nextContext = []) use (&$runner, $index, $context) {
+                                return $runner($index + 1, array_merge($context, $nextContext));
+                            };
+
+                            // Prepare reflection
+                            $ref = new \ReflectionMethod($instance, 'handle');
+                            $merged = array_merge($context, $params); // merged named route params + middleware-returned context
+
+                            // Build args for invokeArgs:
+                            // - always pass $next as first param
+                            // - if middleware is variadic, spread merged values as subsequent positional args
+                            // - elseif middleware expects a second parameter, pass merged array as second arg
+                            $args = [$next];
+                            $paramCount = count($ref->getParameters());
+
+                            if ($ref->isVariadic()) {
+                                $args = array_merge($args, $merged);
+                            } elseif ($paramCount > 1) {
+                                // middleware expects at least two params (e.g. handle(Closure $next, array $context))
+                                $args[] = $merged;
+                            }
+
+                            // Invoke
+                            $result = $ref->invokeArgs($instance, $args);
+
+                            // Normalize result: accept either [$response, $newContext] or single response or null
+                            $response = null;
+                            $newContext = [];
+                            if (is_array($result) && array_key_exists(0, $result)) {
+                                $response = $result[0] ?? null;
+                                $newContext = $result[1] ?? [];
+                            } else {
+                                $response = $result;
+                            }
+
+                            return [$response, array_merge($context, (array)$newContext)];
                         }
 
                         // No handle() → continue
@@ -394,25 +435,19 @@ class Http
                         $instance = new $middlewareClass();
 
                         if (method_exists($instance, 'terminate')) {
-                            // Merge everything into unified context
-                            $terminateContext = array_merge(
-                                $finalParams,
-                                $params,
-                                [
-                                    '_method' => $method,
-                                    '_uri'    => $path,
-                                    '_route'  => $data['name'] ?? null,
-                                ]
-                            );
+                            $ref = new \ReflectionMethod($instance, 'terminate');
+                            $args = [$response];
 
-                            $resultFromTerminate = $instance->terminate($response, $terminateContext);
+                            $paramCount = count($ref->getParameters());
 
-                            // Allow terminate() to modify response
-                            if (is_array($resultFromTerminate)) {
-                                [$response, $finalParams] = array_pad($resultFromTerminate, 2, $finalParams);
-                            } elseif ($resultFromTerminate !== null) {
-                                $response = $resultFromTerminate;
+                            if ($ref->isVariadic()) {
+                                $args = array_merge($args, $params);
+                            } elseif ($paramCount > 1) {
+                                // Afterware expects at least two params (e.g. terminate($response, array $params))
+                                $args[] = $params;
                             }
+
+                            $response = $ref->invokeArgs($instance, $args);
                         }
                     }
                 }
@@ -594,40 +629,53 @@ class Http
      * @param callable|array|string $callback Example: HomeController@index or ['HomeController','index'] or Anonimous function 
      * @param array ...$params Parameters from Slug & Middlewares
      */
-    private static function executeCallback(callable|array|string $callback, array ...$params): void
+    protected static function executeCallback(callable|string $callback, array $params)
     {
-        if (is_string($callback)) {
-            // Set Controller & Method
-            $parts = explode('@', $callback);
-            if(!isset($parts[0]) || !isset($parts[1])) throw new \RuntimeException("Invalid Callable Method: '{$callback}'");
-            [$controller, $method] = $parts;
-
+        // Controller string syntax: 'Controller@method'
+        if (is_string($callback) && str_contains($callback, '@')) {
+            [$controller, $method] = explode('@', $callback);
             $controller = "CBM\\App\\Controller\\{$controller}";
 
-            if(!class_exists($controller) || !method_exists($controller, $method)){
-                throw new \Exception('Invalid Route Callback: '.print_r($callback, true), 500);
+            if (!class_exists($controller) || !method_exists($controller, $method)) {
+                throw new InvalidArgumentException("Controller or method not found: {$controller}@{$method}");
             }
 
-            call_user_func_array([new $controller(), $method], $params);
-            return;
-        } elseif (is_array($callback)) {
-            [$controller, $method] = $callback;
-            $controller = "CBM\\App\\Controller\\{$controller}";
-            // Check Controller & Methods
-            if(!class_exists($controller) || !method_exists($controller, $method)){
-                throw new \Exception('Invalid Route Callback: '.print_r($callback, true), 500);
-            }
-            if (class_exists($controller)) {
-                call_user_func_array([new $controller(), $method], $params);
-                return;
-            }
-        } elseif (is_callable($callback)) {
-            call_user_func_array($callback, $params);
-            return;
+            $ref = new \ReflectionMethod($controller, $method);
+            $args = self::mapParamsToReflection($ref, $params);
+
+            return $ref->invokeArgs(new $controller(), $args);
         }
 
-        throw new \Exception('Invalid Route Callback: '.print_r($callback, true), 500);
-        return;
+        // Closure or callable array
+        $ref = new \ReflectionFunction($callback);
+        $args = self::mapParamsToReflection($ref, $params);
+
+        return $ref->invokeArgs($args);
+    }
+
+    protected static function mapParamsToReflection(\ReflectionFunctionAbstract $ref, array $params): array
+    {
+        $args = [];
+        $paramNames = array_keys($params);
+
+        foreach ($ref->getParameters() as $param) {
+            $name = $param->getName();
+
+            if (array_key_exists($name, $params)) {
+                $args[] = $params[$name];
+            } elseif ($param->isDefaultValueAvailable()) {
+                $args[] = $param->getDefaultValue();
+            } elseif ($param->isVariadic()) {
+                // Spread the rest
+                $args = array_merge($args, $params);
+                break;
+            } else {
+                // Fallback null for missing
+                $args[] = null;
+            }
+        }
+
+        return $args;
     }
 
     private static function expandGroups(array $middlewares): array
